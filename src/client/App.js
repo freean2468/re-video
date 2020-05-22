@@ -1,22 +1,39 @@
 import React, { Component } from 'react';
 import './app.css';
+import Nav from './component/Nav'
+import Main from './component/Main'
 import ReactImage from './react.png';
 
 export default class App extends Component {
-  state = { username: null };
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      videoInfo : null
+    }
+
+    this.loadVideo = this.loadVideo.bind(this);
+    this.videoInfoRef = React.createRef();
+  }
+
+  loadVideo(json) {
+    this.setState({videoInfo:json});
+    this.videoInfoRef.current.updateVideoInfo(json);
+  }
 
   componentDidMount() {
-    fetch('/api/getUsername')
-      .then(res => res.json())
-      .then(user => this.setState({ username: user.username }));
+    document.title = 'Re-video';
   }
 
   render() {
-    const { username } = this.state;
     return (
-      <div>
-        {username ? <h1>{`Hello ${username}`}</h1> : <h1>Loading.. please wait!</h1>}
-        <img src={ReactImage} alt="react" />
+      <div className="Wrapper">
+        <Nav loadVideo={this.loadVideo}/>
+        {this.state.videoInfo !== null && 
+          <Main 
+            ref={this.videoInfoRef} 
+            videoInfo={this.state.videoInfo}/>
+        }
       </div>
     );
   }

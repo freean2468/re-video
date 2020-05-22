@@ -13,10 +13,16 @@
   "author": "Sandeep Raveesh",
   "license": "ISC",
   "dependencies": {
+    "@material-ui/core": "^4.9.14",
+    "@material-ui/icons": "^4.9.1",
+    "@material-ui/lab": "^4.0.0-alpha.53",
     "babel-polyfill": "^6.26.0",
     "express": "^4.16.3",
-    "react": "^16.5.2",
-    "react-dom": "^16.5.2"
+    "immutability-helper": "^3.0.2",
+    "mongodb": "^3.5.7",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "typeface-roboto": "0.0.75"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",

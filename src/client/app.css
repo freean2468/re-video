@@ -3,6 +3,88 @@ h1 {
 }
 
 body {
-  text-align: center;
   margin: auto;
+  font: 200 20px/1.5 Helvetica, Verdana, sans-serif;
 }
+
+textarea { padding : 5px; line-height: 1.6; }
+
+.Wrapper {
+  display: flex;
+  flex-direction: row;
+}
+
+/* Main */
+.Main { flex: 8 }
+
+.SceneCut { border: black 2px solid; margin: 5px 5px}
+
+.TextInfo { width : 100% }
+.TextInfo .Scrt { width : calc(100% - 20px) }
+.TextInfo .Stc { margin-left : 40px; border: #666 2px solid; }
+.TextInfo .StcToken { border : gold 2px solid; margin: 1px 1px}
+.TextInfo .StcToken .Ct, 
+.TextInfo .StcToken .Pp,
+.TextInfo .StcToken .Lt { width : calc( 100% - 20px)}
+.TextInfo .StcToken .WdToken .Ct,
+.TextInfo .StcToken .WdToken .Rt,
+.TextInfo .StcToken .WdToken .Lt { margin-right:10px; width : 100px }
+.TextInfo .StcToken .PctToken { margin-left : 40px; border : indianred 2px solid; }
+.TextInfo .StcToken .PctToken .Ct, 
+.TextInfo .StcToken .PctToken .Pp,
+.TextInfo .StcToken .PcgtToken .Lt { width : calc(100% - 20px)}
+
+
+/* */
+
+/* Nav */
+
+.Nav {
+  flex: 1
+}
+
+.Nav div {
+  width: 200px;
+}
+
+.Nav h2 {
+  font: 400 40px/1.5 Helvetica, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.Nav ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.Nav li {
+  text-align: center;
+  font: 200 20px/1.5 Helvetica, Verdana, sans-serif;
+  border-bottom: 1px solid #ccc;
+}
+
+.Nav li:last-child {
+  border: none;
+}
+
+.Nav li a {
+  text-decoration: none;
+  color: #000;
+  display: block;
+  width: 200px;
+
+  -webkit-transition: font-size 0.3s ease, background-color 0.3s ease;
+  -moz-transition: font-size 0.3s ease, background-color 0.3s ease;
+  -o-transition: font-size 0.3s ease, background-color 0.3s ease;
+  -ms-transition: font-size 0.3s ease, background-color 0.3s ease;
+  transition: font-size 0.3s ease, background-color 0.3s ease;
+}
+
+.Nav li a:hover {
+  font-size: 30px;
+  background: #f6f6f6;
+}
+
+/* */
