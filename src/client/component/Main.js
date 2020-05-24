@@ -1,66 +1,21 @@
 import React, { Component } from "react";
 
 /*
-  Main > VideoInfo > ScreenCut > TextInfo > StcToken > WdToken, PctToken
+  Main > VideoInfo > ScreenCut > TextInfo > StcToken > WdToken
 */
-
-class PctToken extends Component {
-  /*
-    ct, lt, pp
-  */
-  constructor(props) {
-    super(props)
-    this.handleChange = this.handleChange.bind(this)
-
-    this.updatePctToken = props.updatePctToken.bind(this)
-  }
-
-  handleChange(key, value){  
-    let idx = this.props.idx,
-        item = this.props.pct;
-
-    // computed property
-    item[key] = value;
-
-    this.updatePctToken(item, idx)
-  }
-
-  render() {
-    const ct = 'ct', pp = 'pp', lt = 'lt'
-    return (
-      <div className="PctToken">
-        {ct}:
-        <textarea
-          className="Ct"
-          value={this.props.pct[ct]}
-          onChange={(e) => this.handleChange(ct, e.target.value)}
-        />
-        {lt}:
-        <textarea
-          className="Lt"
-          value={this.props.pct[lt]}
-          onChange={(e) => this.handleChange(lt, e.target.value)}
-        />
-        {pp}:
-        <textarea
-          className="Pp"
-          value={this.props.pct[pp]}
-          onChange={(e) => this.handleChange(pp, e.target.value)}
-        />
-      </div>
-    );
-  }
-}
 
 class WdToken extends Component {
   /*
     ct, rt, lt
+    never has states
   */
   constructor(props) {
     super(props)
     this.handleChange = this.handleChange.bind(this)
+    this.handleClickDelWd = this.handleClickDelWd.bind(this)
 
     this.updateWdToken = props.updateWdToken.bind(this)
+    this.delWd = props.delWd.bind(this)
   }
 
   handleChange(key, value){  
@@ -73,10 +28,18 @@ class WdToken extends Component {
     this.updateWdToken(item, idx)
   }
 
+  handleClickDelWd(){
+    console.log(this.props.idx)
+    this.delWd(this.props.idx)
+  }
+
   render() {
     const ct = 'ct', rt = 'rt', lt = 'lt'
     return (
       <div className="WdToken">
+        <button
+          onClick={this.handleClickDelWd}
+        >Del Wd</button>
         {ct}:
         <input
           className="Ct"
@@ -103,14 +66,20 @@ class WdToken extends Component {
 class StcToken extends Component {
   /*
     ct, lt, pp, wd[] or pct[]
+    never has states
   */
   constructor(props) {
     super(props)
     this.handleChange = this.handleChange.bind(this)
     this.updateWdToken = this.updateWdToken.bind(this)
-    this.updatePctToken = this.updatePctToken.bind(this)
+    
+    this.handleClickTokenize = this.handleClickTokenize.bind(this)
+    this.handleClickDelStd = this.handleClickDelStd.bind(this)
+    this.addWd = this.addWd.bind(this)
+    this.delWd = this.delWd.bind(this)
 
     this.updateStcToken = props.updateStcToken.bind(this)
+    this.delStc = props.delStc.bind(this)
   }
 
   handleChange(key, value){  
@@ -130,11 +99,33 @@ class StcToken extends Component {
     this.handleChange('wd', item);
   }
 
-  // called from bottom
-  updatePctToken(pct, idx){
-    let item = this.props.stc['pct'];
-    item[idx] = pct;
-    this.handleChange('pct', item);
+  handleClickTokenize() {
+    fetch('/api/tokenizeStc?stc='+this.props.stc['ct'])
+      .then(res => res.json())
+      .then(list => list.map((wd) => this.addWd(wd)))
+  }
+
+  handleClickDelStd() {
+    this.delStc(this.props.idx)
+  }
+
+  addWd(wd){
+    var item = this.props.stc['wd']
+    if (!item) {
+      item=[]
+    }
+    item = [...item, {
+      ct:wd,
+      rt:'',
+      lt:''
+    }]
+    this.handleChange('wd', item)
+  }
+
+  delWd(idx){
+    let item = this.props.stc['wd']
+    item = item.slice(0,idx).concat(item.slice(idx+1))
+    this.handleChange('wd', item)
   }
 
   render() {
@@ -142,6 +133,12 @@ class StcToken extends Component {
     return (
       <div className="StcToken">
         {ct}:
+        <button
+          onClick={this.handleClickTokenize}
+        >Tokenize</button>
+        <button
+          onClick={this.handleClickDelStd}
+        >Del</button>
         <textarea
           className="Ct"
           value={this.props.stc[ct]}
@@ -164,15 +161,9 @@ class StcToken extends Component {
             <WdToken 
               key={idx}
               wd={wd}
+              idx={idx}
               updateWdToken={this.updateWdToken}
-            />)
-        }
-        {this.props.stc['pct'] &&
-          this.props.stc['pct'].map((pct, idx) =>
-            <PctToken 
-              key={idx}
-              pct={pct}
-              updatePctToken={this.updatePctToken}
+              delWd={this.delWd}
             />)
         }
       </div>
@@ -188,15 +179,24 @@ class TextInfo extends Component {
     super(props)
     this.handleChange = this.handleChange.bind(this)
     this.updateStcToken = this.updateStcToken.bind(this)
+    this.addStc = this.addStc.bind(this)
+    this.delStc = this.delStc.bind(this)
+    this.handleClickOfParse = this.handleClickOfParse.bind(this)
 
     this.updateTextInfo = props.updateTextInfo.bind(this)
+  }
+
+  handleClickOfParse(){
+    fetch('/api/parseStc?stc='+this.props.t['scrt'])
+      .then(res => res.json())
+      .then(list => list.map((stc) => this.addStc(stc)))
   }
 
   handleChange(key, value){  
     let item = this.props.t;
     // computed property
     item[key] = value;
-    this.updateTextInfo('t', item);
+    this.updateTextInfo(key, item);
   }
 
   // called from bottom
@@ -206,10 +206,33 @@ class TextInfo extends Component {
     this.handleChange('stc', item);
   }
 
+  addStc(stc){
+    var item = this.props.t
+    if(!item['stc']) {
+      item['stc'] = [];
+    }
+    item['stc'] = [...item['stc'], {
+      ct:stc,
+      lt:'',
+      pp:''
+    }]
+    this.updateTextInfo('t', item);
+  }
+
+  // called from bottom
+  delStc(idx) {
+    let item = this.props.t
+    item['stc'].splice(idx, 1)
+    this.updateTextInfo('t', item);
+  }
+
   render() {
     return (
       <div className="TextInfo">
         scrt : 
+        <button
+          onClick={this.handleClickOfParse}
+        >parse</button>
         <textarea
           className="Scrt"
           value={this.props.t['scrt']}
@@ -224,7 +247,8 @@ class TextInfo extends Component {
                 stc={stc}
                 idx={idx}
                 updateStcToken={this.updateStcToken}
-               />)
+                delStc={this.delStc}
+              />)
           }
         </div>
       </div>
@@ -238,14 +262,13 @@ class SceneCut extends Component {
   */
   constructor(props) {
     super(props)
-
     this.handleChange = this.handleChange.bind(this)
     this.updateTextInfo = this.updateTextInfo.bind(this)
 
     this.updateSceneCut = props.updateSceneCut.bind(this)
   }
 
-  handleChange(key, value){  
+  handleChange(key, value){
     let item = this.props.cut;
     // computed property
     item[key] = value;
@@ -255,9 +278,8 @@ class SceneCut extends Component {
 
   // called by bottom
   updateTextInfo(key, value){
-    let item = this.props.cut[key];
-    item[key] = value
-
+    let item = this.props.cut.t;
+    item[key] = value[key]
     this.handleChange('t', item)
   }
 
@@ -305,18 +327,29 @@ class SceneCut extends Component {
   }
 }
 
+class DisplayVideoInfo extends Component {
+  constructor(props) {
+    super(props)
+  }
+
+  render() {
+    return (
+      <div className="DisplayVideoInfo">
+        <pre>{JSON.stringify(this.props.videoInfo, null, 2) }</pre>
+      </div>
+    );
+  }
+}
+
 class VideoInfo extends Component {
   /*
     source, link, c[]
   */
   constructor(props) {
     super(props)
-
-    this.state = {
-      videoInfo : props.videoInfo
-    }
-
+    this.state = {videoInfo : props.videoInfo};
     this.handleChange = this.handleChange.bind(this)
+    this.handleClickInsert = this.handleClickInsert.bind(this)
     this.updateSceneCut = this.updateSceneCut.bind(this)
   }
 
@@ -328,7 +361,18 @@ class VideoInfo extends Component {
   handleChange(key, value) {
     let item = this.state.videoInfo
     item[key] = value
+    console.log(item)
     this.setState({videoInfo : item})
+  }
+
+  handleClickInsert() {
+    fetch('/api/insert', {
+        method: 'POST',
+        body: JSON.stringify(this.state.videoInfo),
+        headers: {"Content-Type": "application/json"}
+      })
+      .then(res => res.json())
+      .then(res => console.log(res.res))
   }
 
   // called from bottom
@@ -341,13 +385,13 @@ class VideoInfo extends Component {
 
   render() {
     return (
-      <div>
+      <div className="VideoInfo">
         <span>
-          source :
+          _id :
           <input
             type="text"
-            value={this.state.videoInfo['source']}
-            onChange={(e) => this.handleChange('source', e.target.value)}
+            value={this.state.videoInfo['_id']}
+            onChange={(e) => this.handleChange('name', e.target.value)}
           />
         </span>
         <span>
@@ -357,6 +401,12 @@ class VideoInfo extends Component {
             value={this.state.videoInfo['link']}
             onChange={(e) => this.handleChange('link', e.target.value)}
           />
+        </span>
+        <span>
+          source :
+          <select value={this.state.videoInfo['source']} onChange={(e) => this.handleChange('source', e.target.value)}>
+            <option value="1">Witcher3</option>
+          </select>
         </span>
         <div>
           {this.state.videoInfo['c'] &&
@@ -369,6 +419,14 @@ class VideoInfo extends Component {
               />)
           }
         </div>
+        <div>
+          <button
+            onClick={this.handleClickInsert}
+          >Insert</button>
+        </div>
+        <div>
+          <DisplayVideoInfo videoInfo={this.state.videoInfo}/>
+        </div>
       </div>
     );
   }
@@ -377,11 +435,7 @@ class VideoInfo extends Component {
 export default class Main extends Component {
   constructor(props) {
     super(props)
-
-    this.state = {
-      videoInfo : props.videoInfo
-    }
-
+    this.state = {videoInfo : props.videoInfo}
     this.videoInfoRef = React.createRef();
   }
 

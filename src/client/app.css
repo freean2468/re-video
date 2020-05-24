@@ -9,6 +9,8 @@ body {
 
 textarea { padding : 5px; line-height: 1.6; }
 
+button { background-color : black; color:white; border-radius:20px; border:0px}
+
 .Wrapper {
   display: flex;
   flex-direction: row;
@@ -16,6 +18,9 @@ textarea { padding : 5px; line-height: 1.6; }
 
 /* Main */
 .Main { flex: 8 }
+
+.VideoInfo input { margin-right : 10px }
+.DisplayVideoInfo { font-size : 12px !important }
 
 .SceneCut { border: black 2px solid; margin: 5px 5px}
 
@@ -26,6 +31,7 @@ textarea { padding : 5px; line-height: 1.6; }
 .TextInfo .StcToken .Ct, 
 .TextInfo .StcToken .Pp,
 .TextInfo .StcToken .Lt { width : calc( 100% - 20px)}
+.TextInfo .StcToken .WdToken { margin-left : 40px; border : darkcyan 2px solid;}
 .TextInfo .StcToken .WdToken .Ct,
 .TextInfo .StcToken .WdToken .Rt,
 .TextInfo .StcToken .WdToken .Lt { margin-right:10px; width : 100px }

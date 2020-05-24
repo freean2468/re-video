@@ -20,6 +20,7 @@
     "express": "^4.16.3",
     "immutability-helper": "^3.0.2",
     "mongodb": "^3.5.7",
+    "natural": "^2.1.5",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "typeface-roboto": "0.0.75"
