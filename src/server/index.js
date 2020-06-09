@@ -18,11 +18,30 @@ app.use(express.json())
 const DATABASE_NAME = "sensebe_dictionary"
 const VIDEO_ARCHIVE_PATH = "collections/SB_VIDEO"
 const VIDEO_COLLECTION = "SB_VIDEO"
+const LIST_FILE_PATH = "list.json"
 
 const PASSWORD = fs.readFileSync("./pw.txt", "utf8")
 
+function getStrtOptionList(req, res) {
+    const json = JSON.parse(fs.readFileSync(LIST_FILE_PATH, 'utf-8'))
+
+    res.json(json['strt'])
+}
+
+function addNewStrt(req, res) {
+    const json = JSON.parse(fs.readFileSync(LIST_FILE_PATH, 'utf-8'));
+    const strt = req.query.strt;
+
+    json.strt.push(strt);
+
+    fs.writeFileSync(LIST_FILE_PATH, JSON.stringify(json, null, "\t"), "utf-8")
+
+    res.json({res:'complete'})
+}
+
 function getFileList(res) {
     const filelist = fs.readdirSync(VIDEO_ARCHIVE_PATH)
+    console.log(filelist)
     var responseData = []
 
     filelist.forEach(element => {
@@ -87,7 +106,7 @@ async function insert(req, res) {
             await createListing(client, query, VIDEO_COLLECTION)
         }
 
-        // SB_WORD INSERT
+        // // SB_WORD INSERT
         // let wordList = JSON.parse(fs.readFileSync(path.join(COL_INFO_PATH, WORD_LIST), "utf8"))
         // for (let i = 0; i < query['c'].length; ++i) {
         //     let stc = query['c'][i]['t']['stc']
@@ -171,6 +190,8 @@ app.get('/api/tokenizeStc', (req, res) => tokenizeStc(req, res));
 app.get('/api/parseStc', (req, res) => parseStc(req, res));
 app.get('/api/getFileList', (req, res) => getFileList(res));
 app.get('/api/getFile', (req, res) => getFile(req, res));
+app.get('/api/getStrtOptionList', (req, res) => getStrtOptionList(req, res));
+app.get('/api/addNewStrt', (req, res) => addNewStrt(req, res));
 
 app.listen(process.env.PORT || 8080, () => console.log(`Listening on port ${process.env.PORT || 8080}!`));
 
