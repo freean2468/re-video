@@ -18,23 +18,27 @@ app.use(express.json())
 const DATABASE_NAME = "sensebe_dictionary"
 const VIDEO_ARCHIVE_PATH = "collections/SB_VIDEO"
 const VIDEO_COLLECTION = "SB_VIDEO"
-const LIST_FILE_PATH = "list.json"
+const WORD_COLLECTION = "SB_WORD"
+
+// lists
+const LIST_OF_STRT = "list.json"
+const LIST_OF_WORD = "list_word.json"
 
 const PASSWORD = fs.readFileSync("./pw.txt", "utf8")
 
 function getStrtOptionList(req, res) {
-    const json = JSON.parse(fs.readFileSync(LIST_FILE_PATH, 'utf-8'))
+    const json = JSON.parse(fs.readFileSync(LIST_OF_STRT, 'utf-8'))
 
     res.json(json['strt'])
 }
 
 function addNewStrt(req, res) {
-    const json = JSON.parse(fs.readFileSync(LIST_FILE_PATH, 'utf-8'));
+    const json = JSON.parse(fs.readFileSync(LIST_OF_STRT, 'utf-8'));
     const strt = req.query.strt;
 
     json.strt.push(strt);
 
-    fs.writeFileSync(LIST_FILE_PATH, JSON.stringify(json, null, "\t"), "utf-8")
+    fs.writeFileSync(LIST_OF_STRT, JSON.stringify(json, null, "\t"), "utf-8")
 
     res.json({res:'complete'})
 }
@@ -106,77 +110,79 @@ async function insert(req, res) {
             await createListing(client, query, VIDEO_COLLECTION)
         }
 
-        // // SB_WORD INSERT
-        // let wordList = JSON.parse(fs.readFileSync(path.join(COL_INFO_PATH, WORD_LIST), "utf8"))
-        // for (let i = 0; i < query['c'].length; ++i) {
-        //     let stc = query['c'][i]['t']['stc']
+        // SB_WORD INSERT
+        let wordList = JSON.parse(fs.readFileSync(LIST_OF_WORD, "utf8"));
 
-        //     if (stc) {
-        //         for (let j = 0; j < stc.length; ++j) {
-        //             let wd = stc[j]['wd']
+        for (let i = 0; i < query['c'].length; ++i) {
+            let stc = query['c'][i]['t']['stc']
 
-        //             if (wd) {
-        //                 for (let k = 0; k < wd.length; ++k) {
-        //                     let data = wd[k], ct = data['ct'], lt = data['lt'],
-        //                         sp = 0
+            if (stc) {
+                for (let j = 0; j < stc.length; ++j) {
+                    let wd = stc[j]['wd']
+
+                    if (wd) {
+                        for (let k = 0; k < wd.length; ++k) {
+                            let data = wd[k], ct = data['ct'], lt = data['lt'],
+                                sp = 0
                                 
-        //                     let rt = undefined
+                            let rt = undefined
 
-        //                     if (data['rt']) {
-        //                         rt = data['rt'].toLowerCase()
-        //                     } else {
-        //                         rt = data['ct'].toLowerCase()
-        //                     }
+                            if (data['rt']) {
+                                rt = data['rt'].toLowerCase()
+                            } else {
+                                rt = data['ct'].toLowerCase()
+                            }
                             
-        //                     let hashId = rt.hashCode(),
-        //                         listing = { 
-        //                             _id: hashId, 
-        //                             rt: rt,
-        //                             links: [
-        //                                 {
-        //                                     ct: ct,
-        //                                     lt: data['lt'], 
-        //                                     link: link, 
-        //                                     pos: {
-        //                                         stc:j,
-        //                                         wd:k
-        //                                     }
-        //                                 }
-        //                             ]
-        //                         }
+                            let hashId = rt.hashCode(),
+                                listing = { 
+                                    _id: hashId, 
+                                    rt: rt,
+                                    links: [
+                                        {
+                                            ct: ct,
+                                            lt: data['lt'], 
+                                            link: link, 
+                                            pos: {
+                                                c:i,
+                                                stc:j,
+                                                wd:k
+                                            }
+                                        }
+                                    ]
+                                }
 
-        //                     result = await client.db(DATABASE_NAME).collection(WORD_COLLECTION).findOne(listing)
+                            result = await client.db(DATABASE_NAME).collection(WORD_COLLECTION).findOne({'_id':hashId})
 
-        //                     if (!result) {
-        //                         await createListing(client, listing, WORD_COLLECTION)
-        //                     } else {
-        //                         await replaceListing(client, listing, WORD_COLLECTION)
-        //                     }
+                            if (!result) {
+                                await createListing(client, listing, WORD_COLLECTION);
+                            } else {
+                                let flag = false;
+                                for (let i = 0; i < result.links.length; ++i) {
+                                    if (listing.links[0].pos.c === result.links[i].pos.c &&
+                                        listing.links[0].pos.stc === result.links[i].pos.stc &&
+                                        listing.links[0].pos.wd === result.links[i].pos.wd) {
+                                        flag = true;
+                                        break;
+                                    }
+                                }
+                                if(!flag) {
+                                    result.links.push(listing.links[0]);
+                                    await replaceListing(client, result, WORD_COLLECTION);
+                                } 
+                            }
 
-        //                     if (!wordList[ct]) {
-        //                         wordList[ct] = []
-        //                         wordList[ct].push(lt)
-        //                     } else {
-        //                         let bool = true
+                            if (wordList[rt] === undefined) {
+                                wordList[rt] = hashId;
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-        //                         for (let i in wordList[ct]) {
-        //                             if (wordList[ct][i] === lt) {
-        //                                 bool = false
-        //                             }
-        //                         }
-                                
-        //                         if (bool) {
-        //                             wordList[ct].push(lt)
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-
-        // fs.writeFileSync(path.join(__dirname, COL_INFO_PATH, WORD_LIST), JSON.stringify(wordList, null, "\t"), "utf-8")
-        res.json({res:'complete'})
+        fs.writeFileSync(LIST_OF_WORD, JSON.stringify(wordList, null, "\t"), "utf-8");
+        fs.writeFileSync(path.join('../re-sensebe', LIST_OF_WORD), JSON.stringify(wordList, null, "\t"), "utf-8");
+        res.json({res:'complete'});
     } catch (e) {
         console.error(e)
         res.json({res:e})
@@ -211,3 +217,15 @@ async function replaceListing(client, listing, collection) {
     // console.log(`${result.matchedCount} document(s) matched the query criteria.`);
     console.log(`_id : ${listing['_id']}, for "${listing["link"]}" replaced : matchedCount(${result.matchedCount}), modiefiedCount(${result.modifiedCount})`);
 }
+
+Object.defineProperty(String.prototype, 'hashCode', {
+    value: function() {
+            var hash = 0, i, chr;
+            for (i = 0; i < this.length; i++) {
+            chr   = this.charCodeAt(i);
+            hash  = ((hash << 5) - hash) + chr;
+            hash |= 0; // Convert to 32bit integer
+        }
+        return hash;
+    }
+});

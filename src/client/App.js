@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import './app.css';
 import Nav from './component/Nav'
 import Main from './component/Main'
-import ReactImage from './react.png';
 
 export default class App extends Component {
   constructor(props) {
