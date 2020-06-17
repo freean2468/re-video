@@ -6,6 +6,8 @@ export default class TextCanvas extends Component {
         super(props)
 
         this.state = {
+            x : 0,
+            y : 0,
             width : 0,
             height : 0,
             interval : null,
@@ -15,8 +17,6 @@ export default class TextCanvas extends Component {
         this.container = React.createRef();
         this.optionRef = React.createRef();
         this.canvasRef = React.createRef();
-        this.xRef = React.createRef();
-        this.yRef = React.createRef();
 
         this.ctx = null;
 
@@ -81,8 +81,6 @@ export default class TextCanvas extends Component {
             fetch(`/api/getCanvasInfo?source=${this.props.source}`)
                 .then(res => res.json())
                 .then(res => {
-                    this.handleChange('x', res.cv.x);
-                    this.handleChange('y', res.cv.y);
                     this.handleChange('pt', res.cv.pt);
                     this.handleChange('pl', res.cv.pl);
                     this.handleChange('pr', res.cv.pr);
@@ -100,6 +98,11 @@ export default class TextCanvas extends Component {
                 width:this.optionRef.current.offsetWidth,
                 height:this.optionRef.current.offsetHeight
             })
+            this.ctx.clearRect(0,0,this.state.width,this.state.height);
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = "red";
+            this.ctx.rect(this.state.width*this.state.x/100, this.state.height*this.state.y/100, 10, 10)
+            this.ctx.stroke();
         }, 1000)});
     }
 
@@ -116,8 +119,6 @@ export default class TextCanvas extends Component {
         fetch(`/api/getCanvasInfo?source=${this.props.source}`)
             .then(res => res.json())
             .then(res => {
-                this.handleChange('x', res.cv.x);
-                this.handleChange('y', res.cv.y);
                 this.handleChange('pt', res.cv.pt);
                 this.handleChange('pl', res.cv.pl);
                 this.handleChange('pr', res.cv.pr);
@@ -151,17 +152,12 @@ export default class TextCanvas extends Component {
         x=Number((x).toFixed(1));
         y=Number((y).toFixed(1));
 
-        this.xRef.current.value = x;
-        this.yRef.current.value = y;
-        this.handleChange('x', x);
-        this.handleChange('y', y);
+        this.setState({x:x, y:y});
     }
 
     render() {
-        let x = 0, y = 0, pt = 0, pl = 0, pr = 0, fs = 0, ff='';
+        let pt = 0, pl = 0, pr = 0, fs = 0, ff='';
         if (this.props.cv) {
-            if (this.props.cv.x) x = this.props.cv.x
-            if (this.props.cv.y) y = this.props.cv.y
             if (this.props.cv.pt) pt = this.props.cv.pt
             if (this.props.cv.pl) pl = this.props.cv.pl
             if (this.props.cv.pr) pr = this.props.cv.pr
@@ -172,9 +168,7 @@ export default class TextCanvas extends Component {
         return (
             <>
                 <canvas className="TextCanvas" onMouseDown={this.handleOnMouseDown} ref={this.canvasRef}
-                    width={this.state.width} height={this.state.height}>
-                    {this.props.idx}
-                </canvas>
+                    width={this.state.width} height={this.state.height}/>
                 <div className="TextDisplay" ref={this.displayRef} 
                     style={{
                         // width:`${this.state.width}px`,
@@ -188,36 +182,24 @@ export default class TextCanvas extends Component {
                     {this.state.scrt.map((token)=>token)}
                 </div>
                 <span className="CanvasOptions" ref={this.optionRef}>
-                    x: <input value={x}
-                            type="number"
-                            onChange={(e) => this.handleChange('x', e.target.value)}
-                            ref={this.xRef}
-                        />%
-                    y: <input value={y}
-                            type="number"
-                            onChange={(e) => this.handleChange('y', e.target.value)}
-                            ref={this.yRef}
-                        />%
+                    (x: {this.state.x}%, y: {this.state.y}%)
                     <br></br>
                     pt: <input value={pt}
-                            type="number"
                             onChange={(e) => this.handleChange('pt', e.target.value)}
                         />%
                     pl: <input value={pl}
-                            type="number"
                             onChange={(e) => this.handleChange('pl', e.target.value)}
                         />%
                     pr: <input value={pr}
-                            type="number"
                             onChange={(e) => this.handleChange('pr', e.target.value)}
                         />%
                     <br></br>
                     fs: <input value={fs}
-                            type="number"
                             onChange={(e) => this.handleChange('fs', e.target.value)}
                         />
                     ff: <select value={ff} onChange={(e) => this.handleChange('ff', e.target.value)}>
                             <option value="PT Sans, sans-serif">PT Sans, sans-serif</option>
+                            <option value="sth">sth</option>
                         </select>
                     <br></br>
                     <button onClick={this.handleClickInsert}>

@@ -233,8 +233,7 @@ async function insertCanvasInfo(req, res) {
         let json = {
             "_id" : query.source,
             "cv" :  {
-                "x" : query.x,
-                "y" : query.y,
+                "ff" : query.ff,
                 "fs" : query.fs,
                 "pt" : query.pt,
                 "pl" : query.pl,
