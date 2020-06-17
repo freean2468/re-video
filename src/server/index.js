@@ -19,12 +19,40 @@ const DATABASE_NAME = "sensebe_dictionary"
 const VIDEO_ARCHIVE_PATH = "collections/SB_VIDEO"
 const VIDEO_COLLECTION = "SB_VIDEO"
 const WORD_COLLECTION = "SB_WORD"
+const CANVAS_COLLECTION = "SB_CANVAS"
 
 // lists
 const LIST_OF_STRT = "list.json"
 const LIST_OF_WORD = "list_word.json"
+const LIST_OF_SOURCE = "list_source.json"
 
 const PASSWORD = fs.readFileSync("./pw.txt", "utf8")
+
+async function getCanvasInfo(req, res) {
+    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    const query = req.query
+
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect()
+
+        let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: query['source'] });
+
+        res.json(result);
+    } catch (e) {
+        console.error(e)
+        res.json({res:e})
+    } finally {
+        await client.close()
+    }
+}
+
+function getSourceList(res) {
+    const json = JSON.parse(fs.readFileSync(LIST_OF_SOURCE, 'utf-8'))
+
+    res.json(json)
+}
 
 function getStrtOptionList(req, res) {
     const json = JSON.parse(fs.readFileSync(LIST_OF_STRT, 'utf-8'))
@@ -76,13 +104,11 @@ function tokenizeStc(req, res) {
 }
 
 async function insert(req, res) {
-    console.log('[insert!]')
     const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
 
     req.accepts('application/json');
     const query = req.body
-    console.log(query)
 
     try {
         // Connect to the MongoDB cluster
@@ -191,13 +217,57 @@ async function insert(req, res) {
     }
 }
 
+async function insertCanvasInfo(req, res) {
+    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+
+    req.accepts('application/json');
+    const query = req.body
+
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect()
+
+        let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: query['source'] });
+
+        let json = {
+            "_id" : query.source,
+            "cv" :  {
+                "x" : query.x,
+                "y" : query.y,
+                "fs" : query.fs,
+                "pt" : query.pt,
+                "pl" : query.pl,
+                "pr" : query.pr
+            }   
+        }
+
+        if (result) {
+            await replaceListing(client, json, CANVAS_COLLECTION);
+        } else {
+            console.log('[IST CV CREATE}')
+            await createListing(client, json, CANVAS_COLLECTION);
+        }
+
+        res.json({res:'complete'});
+    } catch (e) {
+        console.error(e)
+        res.json({res:e})
+    } finally {
+        await client.close()
+    }
+}
+
 app.post('/api/insert', (req, res) => insert(req, res));
+app.post('/api/insertCanvasInfo', (req, res) => insertCanvasInfo(req, res));
 app.get('/api/tokenizeStc', (req, res) => tokenizeStc(req, res));
 app.get('/api/parseStc', (req, res) => parseStc(req, res));
 app.get('/api/getFileList', (req, res) => getFileList(res));
 app.get('/api/getFile', (req, res) => getFile(req, res));
 app.get('/api/getStrtOptionList', (req, res) => getStrtOptionList(req, res));
 app.get('/api/addNewStrt', (req, res) => addNewStrt(req, res));
+app.get('/api/getSourceList', (req, res) => getSourceList(res));
+app.get('/api/getCanvasInfo', (req, res) => getCanvasInfo(req, res));
 
 app.listen(process.env.PORT || 8080, () => console.log(`Listening on port ${process.env.PORT || 8080}!`));
 

@@ -7,10 +7,18 @@ export default class VideoInfo extends Component {
     */
     constructor(props) {
       super(props)
-      this.state = {videoInfo : props.videoInfo};
+      this.state = {
+        videoInfo : props.videoInfo,
+        sourceList : []
+      };
       this.handleChange = this.handleChange.bind(this)
       this.handleClickInsert = this.handleClickInsert.bind(this)
       this.updateSceneCut = this.updateSceneCut.bind(this)
+
+
+      fetch('/api/getSourceList')
+        .then(res => res.json())
+        .then(res => this.setState({sourceList:res.source}))
     }
   
     // refed
@@ -64,7 +72,8 @@ export default class VideoInfo extends Component {
           <span>
             source :
             <select value={this.state.videoInfo['source']} onChange={(e) => this.handleChange('source', e.target.value)}>
-              <option value="1">Witcher3</option>
+              {this.state.sourceList !== [] &&
+                this.state.sourceList.map((item, idx) => <option key={idx} value={idx}>{item}</option>)}
             </select>
           </span>
           <div>
@@ -75,6 +84,8 @@ export default class VideoInfo extends Component {
                   cut={cut}
                   idx={idx}
                   updateSceneCut={this.updateSceneCut}
+                  link={this.state.videoInfo.link}
+                  source={this.state.videoInfo.source}
                 />)
             }
           </div>
