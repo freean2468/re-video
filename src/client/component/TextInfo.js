@@ -13,6 +13,7 @@ export default class TextInfo extends Component {
       this.delStc = this.delStc.bind(this)
       this.handleClickOfParse = this.handleClickOfParse.bind(this)
   
+      this.insert = props.insert.bind(this);
       this.updateTextInfo = props.updateTextInfo.bind(this)
     }
   
@@ -78,6 +79,9 @@ export default class TextInfo extends Component {
                   key={idx}
                   stc={stc}
                   idx={idx}
+                  c={this.props.c}
+                  link={this.props.link}
+                  insert={this.insert}
                   updateStcToken={this.updateStcToken}
                   delStc={this.delStc}
                 />)

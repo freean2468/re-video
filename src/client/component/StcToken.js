@@ -16,6 +16,7 @@ export default class StcToken extends Component {
       this.handleClickTokenize = this.handleClickTokenize.bind(this);
       this.handleClickAddStrt = this.handleClickAddStrt.bind(this);
   
+      this.insert = props.insert.bind(this);
       this.updateStcToken = props.updateStcToken.bind(this);
       this.delStc = props.delStc.bind(this);
 
@@ -58,7 +59,7 @@ export default class StcToken extends Component {
         item=[]
       }
   
-      item = [...item, {}]
+      item = [...item, {}];
       this.handleChange('strt', item)
     }
   
@@ -75,8 +76,6 @@ export default class StcToken extends Component {
   
       this.handleChange('strt', item);
     }
-
-
   
     // called from bottom
     updateWdToken(wd, idx){
@@ -174,6 +173,10 @@ export default class StcToken extends Component {
                 key={idx}
                 wd={wd}
                 idx={idx}
+                c={this.props.c}
+                stc={this.props.idx}
+                link={this.props.link}
+                insert={this.insert}
                 updateWdToken={this.updateWdToken}
                 delWd={this.delWd}
               />)

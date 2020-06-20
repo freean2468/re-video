@@ -84,6 +84,7 @@ export default class VideoInfo extends Component {
                   cut={cut}
                   idx={idx}
                   updateSceneCut={this.updateSceneCut}
+                  insert={this.handleClickInsert}
                   link={this.state.videoInfo.link}
                   source={this.state.videoInfo.source}
                 />)

@@ -98,6 +98,9 @@ export default class StrtToken extends Component {
 
     handleClickAddRt() {
         let item = this.props.strt.rt;
+        if (!item) {
+            item = []
+        }
         item = [...item, ''];
         this.handleChange('rt', item);
     }
@@ -220,7 +223,8 @@ export default class StrtToken extends Component {
                 <button onClick={this.handleClickAddRt}>add rt</button>
 
                 <br></br>
-                {this.props.strt.rt.map((rt, idx) => 
+                {this.props.strt.rt &&
+                    this.props.strt.rt.map((rt, idx) => 
                     <div key={idx}>
                         <input className="Rt"
                             value={rt}

@@ -15,6 +15,7 @@ export default class SceneCut extends Component {
       this.updateTextInfo = this.updateTextInfo.bind(this);
       this.updateCanvasInfo = this.updateCanvasInfo.bind(this);
   
+      this.insert = props.insert.bind(this);
       this.updateSceneCut = props.updateSceneCut.bind(this);
 
       this.ypStRef = React.createRef();
@@ -88,8 +89,11 @@ export default class SceneCut extends Component {
             flag={false} link={this.props.link} container="iframe-container"  class="iframe" 
           />
           <TextInfo 
+            c={this.props.idx}
             t={this.props.cut['t']} 
+            insert={this.insert}
             updateTextInfo={this.updateTextInfo}
+            link={this.props.link}
           />
           <div>
             {lt} : 
