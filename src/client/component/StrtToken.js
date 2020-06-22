@@ -6,35 +6,30 @@ export default class StrtToken extends Component {
         super(props);
 
         this.state = {
-            optionList : [],
-            newStrt : ''
+            isDisabled : true,
+            strtList : [],
         }
 
         this.handleChange = this.handleChange.bind(this);
-        this.handleChangeNewStrt = this.handleChangeNewStrt.bind(this);
-        this.handleChangeT = this.handleChangeT.bind(this);
+        this.handleOnChangeStrt = this.handleOnChangeStrt.bind(this);
         this.handleChangeValInfo = this.handleChangeValInfo.bind(this);
 
         this.handleClickAddRt = this.handleClickAddRt.bind(this);
         this.handleClickDelRt = this.handleClickDelRt.bind(this);
 
         this.handleClickDelStrt = this.handleClickDelStrt.bind(this);
-        this.handleClickNewStrt = this.handleClickNewStrt.bind(this);
-        this.fetchStrtOptionList = this.fetchStrtOptionList.bind(this);
+        this.handleOnClickToggler = this.handleOnClickToggler.bind(this);
 
+        this.insert = props.insert.bind(this);
         this.updateStrtToken = props.updateStrtToken.bind(this);
         this.delStrt = props.delStrt.bind(this);
+
+        if (this.props.strt.t === undefined && this.props.strt.usg === undefined) {
+            this.state.isDisabled = false;
+        }
         
         // register up to the parent states
         this.updateStrtToken(this.props.strt, this.props.idx);
-
-        this.fetchStrtOptionList();
-    }
-
-    fetchStrtOptionList(){
-        fetch('/api/getStrtOptionList')
-          .then(res => res.json())
-          .then(list => this.setState({optionList:list}))
     }
 
     handleChange(key, value){  
@@ -51,11 +46,7 @@ export default class StrtToken extends Component {
         this.updateStrtToken(item, idx)
     }
 
-    handleChangeNewStrt(value) {
-        this.setState({newStrt : value});
-    }
-
-    handleChangeT(value) {
+    handleOnChangeStrt(value) {
         let valInfo = [];
         for (let i = 0; i < value.split(' ').length; ++i){
             valInfo.push({
@@ -90,10 +81,24 @@ export default class StrtToken extends Component {
         this.delStrt(this.props.idx);
     }
 
-    handleClickNewStrt() {
-        fetch(`/api/addNewStrt?strt=${this.state.newStrt}`)
+    handleOnClickToggler() {
+      let isDisabled = this.state.isDisabled;
+
+      this.setState({isDisabled:!this.state.isDisabled});
+
+      if (isDisabled) {
+        fetch(`/api/getStrtInfo?rt=${this.props.strt.rt}`)
           .then(res => res.json())
-          .then(res => this.fetchStrtOptionList())
+          .then(res => this.setState({strtList:res.res}))
+
+        fetch(`/api/deleteStrtFromBase?rt=${this.props.strt.rt}&t=${this.props.strt.t}&link=${this.props.link}
+            &c=${this.props.c}&stc=${this.props.stc}`)
+            .then(res => res.json())
+            .then(res => console.log('[deleteStrtFromBase_RES] : ', res))
+      } else {
+        this.insert();
+        this.setState({strtList:[]});
+      }
     }
 
     handleClickAddRt() {
@@ -114,32 +119,35 @@ export default class StrtToken extends Component {
     render () {
         return (
             <div className="StrtToken">
-                Strt : 
                 <button
                     onClick={this.handleClickDelStrt}
                 >Del Strt</button>
                 <br></br>
-                select : 
-                <select 
-                    value={this.props.strt.t} 
-                    onChange={(e) => this.handleChangeT(e.target.value)}>
-                    {
-                        this.state.optionList !== [] &&
-                            this.state.optionList.map((option, _idx)=>
-                                <option key={_idx} value={option} label={option}>
-                                    {option}
-                                </option>)
-                    }
-                </select>
-                &nbsp;or&nbsp; 
+                strt : 
                 <input
-                    className="NewStrt"
-                    value={this.state.newStrt}
-                    onChange={(e) => this.handleChangeNewStrt(e.target.value)}
+                    className="Strt"
+                    value={this.props.strt.t}
+                    disabled={(this.state.isDisabled)? "disabled" : ""}
                 />
+                &nbsp; 
+                {(this.state.strtList !== []) &&
+                    <>
+                        strtList:
+                        <select    
+                            defaultValue={this.props.strt.t} 
+                            onChange={(e) => this.handleOnChangeStrt(e.target.value)}
+                            disabled={(this.state.isDisabled)? "disabled" : ""}
+                        >
+                            {this.state.strtList.map((item, idx)=>
+                                <option key={idx} value={item}> {item} </option>)
+                            }
+                        </select>
+                    </>
+                }
                 <button
-                    onClick={this.handleClickNewStrt}
-                >New Strt</button>
+                    className="Toggler"
+                    onClick={this.handleOnClickToggler}
+                >Toggler</button>
                 &nbsp;
                 attached from : 
                 <input className="From"

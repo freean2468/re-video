@@ -187,6 +187,10 @@ export default class StcToken extends Component {
                 key={idx}
                 strt={strt}
                 idx={idx}
+                c={this.props.c}
+                stc={this.props.idx}
+                link={this.props.link}
+                insert={this.insert}
                 updateStrtToken={this.updateStrtToken}
                 delStrt={this.delStrt}
                 wd={this.props.stc.wd}

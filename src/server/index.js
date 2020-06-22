@@ -24,53 +24,15 @@ const CANVAS_COLLECTION = "SB_CANVAS"
 const STRT_COLLECTION = "SB_STRT"
 
 // lists
-const LIST_OF_STRT = "list.json"
 const LIST_OF_WORD = "list_word.json"
 const LIST_OF_SOURCE = "list_source.json"
 
 const PASSWORD = fs.readFileSync("./pw.txt", "utf8")
 
-async function getCanvasInfo(req, res) {
-    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
-    const query = req.query
-
-    try {
-        // Connect to the MongoDB cluster
-        await client.connect()
-
-        let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: query['source'] });
-
-        res.json(result);
-    } catch (e) {
-        console.error(e)
-        res.json({res:e})
-    } finally {
-        await client.close()
-    }
-}
-
 function getSourceList(res) {
     const json = JSON.parse(fs.readFileSync(LIST_OF_SOURCE, 'utf-8'))
 
     res.json(json)
-}
-
-function getStrtOptionList(req, res) {
-    const json = JSON.parse(fs.readFileSync(LIST_OF_STRT, 'utf-8'))
-
-    res.json(json['strt'])
-}
-
-function addNewStrt(req, res) {
-    const json = JSON.parse(fs.readFileSync(LIST_OF_STRT, 'utf-8'));
-    const strt = req.query.strt;
-
-    json.strt.push(strt);
-
-    fs.writeFileSync(LIST_OF_STRT, JSON.stringify(json, null, "\t"), "utf-8")
-
-    res.json({res:'complete'})
 }
 
 function getFileList(res) {
@@ -105,6 +67,87 @@ function tokenizeStc(req, res) {
     res.json(token)
 }
 
+async function getCanvasInfo(req, res) {
+    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    const query = req.query
+
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect()
+
+        let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: query['source'] });
+
+        res.json(result);
+    } catch (e) {
+        console.error(e.stack)
+        res.json({res:e})
+    } finally {
+        await client.close()
+    }
+}
+
+async function getWdInfo(req, res) {
+    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    const query = req.query, ct = query.ct;
+    
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect()
+
+        let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({ _id: ct.hashCode() });
+
+        if (result) {
+            let list = [];
+
+            for (let i = 0; i < result.wd_m.length; ++i) {
+                const lt = result.wd_m[i].lt;
+
+                list.push(lt)
+            }
+
+            res.json({res:list});
+        } else {
+            res.json({res:0})
+        } 
+    } catch (e) {
+        console.error(e)
+        res.json({res:e})
+    } finally {
+        await client.close()
+    }
+}
+
+async function getStrtInfo(req, res) {
+    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    const query = req.query, rt = query.rt;
+    
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect()
+
+        let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({ _id: rt.hashCode() });
+        let list = [];
+
+        if (result) {
+            for (let i = 0; i < result.strt_m.length; ++i) {
+                const t = result.strt_m[i].t;
+
+                list.push(t)
+            }
+        } 
+        
+        res.json({res:list});
+    } catch (e) {
+        console.error(e)
+        res.json({res:[e]})
+    } finally {
+        await client.close()
+    }
+}
+
 async function deleteWdBase(req, res) {
     const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`;
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -119,24 +162,24 @@ async function deleteWdBase(req, res) {
         const result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({ 
             _id: ct.hashCode(),
             rt:ct,
-            'm.lt': lt
+            'wd_m.lt': lt
         });
 
         if (result) {
             console.log(result);
-            for (let i = 0; i < result.m.length; ++i) {
-                if (result.m[i].lt === lt) {
-                    if (result.m[i].lk.length <= 1) {
+            for (let i = 0; i < result.wd_m.length; ++i) {
+                if (result.wd_m[i].lt === lt) {
+                    if (result.wd_m[i].lk.length <= 1) {
                         const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne({ 
                             _id: ct.hashCode(),
                             rt:ct,
-                            'm.lt': lt,
-                            'm.lk.link':link,
-                            'm.lk.pos':{c:parseInt(c), stc:parseInt(stc), wd:parseInt(wd)}
+                            'wd_m.lt': lt,
+                            'wd_m.lk.link':link,
+                            'wd_m.lk.pos':{c:parseInt(c), stc:parseInt(stc), wd:parseInt(wd)}
                         },
                         {
                             $pull:{
-                                'm' : {
+                                'wd_m' : {
                                     lt:lt
                                 }
                             }
@@ -145,19 +188,19 @@ async function deleteWdBase(req, res) {
                         if (test.result.nModified !== 1)
                             throw new Error(test.result.nModified);
                     } else {
-                        for (let j = 0; j < result.m[i].lk.length; ++j) {
-                            if (result.m[i].lk[j].link.trim() == link.trim() && result.m[i].lk[j].pos.c == c
-                                    && result.m[i].lk[j].pos.stc == stc && result.m[i].lk[j].pos.wd == wd) {
+                        for (let j = 0; j < result.wd_m[i].lk.length; ++j) {
+                            if (result.wd_m[i].lk[j].link.trim() == link.trim() && result.wd_m[i].lk[j].pos.c == c
+                                    && result.wd_m[i].lk[j].pos.stc == stc && result.wd_m[i].lk[j].pos.wd == wd) {
                                 const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne({ 
                                     _id: ct.hashCode(),
                                     rt:ct,
-                                    'm.lt': lt,
-                                    'm.lk.link':link,
-                                    'm.lk.pos':{c:parseInt(c), stc:parseInt(stc), wd:parseInt(wd)}
+                                    'wd_m.lt': lt,
+                                    'wd_m.lk.link':link,
+                                    'wd_m.lk.pos':{c:parseInt(c), stc:parseInt(stc), wd:parseInt(wd)}
                                 },
                                 {
                                     $pull:{
-                                        'm.$[].lk' : {
+                                        'wd_m.$[].lk' : {
                                             link: link , 
                                             pos: {c:parseInt(c), stc:parseInt(stc), wd:parseInt(wd)}
                                         }
@@ -172,6 +215,93 @@ async function deleteWdBase(req, res) {
                     }
                     res.json({res:'complete'});
                     break;   
+                }
+            }
+        } else {
+            throw new Error('Something wrong');
+        }
+    } catch (e) {
+        console.error(e.stack);
+        res.json({res:e});
+    } finally {
+        await client.close()
+    }
+}
+
+async function deleteStrtFromBase(req, res) {
+    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`;
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    const query = req.query, rt = query.rt.trim(), t = query.t.trim(), link = query.link.trim()
+        c = query.c.trim(), stc = query.stc.trim();
+
+        console.log(c);
+        console.log(stc);
+        // what will happen if rt's array?
+    console.log('[DeleteStrt] ', rt);
+
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect();
+
+        const result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({ 
+            _id: rt.hashCode(),
+            rt:rt,
+            'strt_m.t': t
+        });
+
+        if (result) {
+            for (let i = 0; i < result.strt_m.length; ++i) {
+                if (result.strt_m[i].t === t) {
+                    if (result.strt_m[i].lk.length <= 1) {
+                        const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne({ 
+                            _id: rt.hashCode(),
+                            rt:rt,
+                            'strt_m.t': t,
+                            'strt_m.lk.link':link,
+                            'strt_m.lk.pos.c':parseInt(c),
+                            'strt_m.lk.pos.stc':parseInt(stc)
+                        },
+                        {
+                            $pull:{
+                                'strt_m' : {
+                                    t:t
+                                }
+                            }
+                        });
+
+                        if (test.result.nModified !== 1)
+                            throw new Error(test.result.nModified);
+                    } else {
+                        for (let j = 0; j < result.strt_m[i].lk.length; ++j) {
+                            if (result.strt_m[i].lk[j].link == link && result.strt_m[i].lk[j].pos.c == c
+                                    && result.strt_m[i].lk[j].pos.stc == stc) {
+                                console.log('In!!');
+                                const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne({ 
+                                    _id: rt.hashCode(),
+                                    rt:rt,
+                                    'strt_m.t': t,
+                                    'strt_m.lk.link':link,
+                                    'strt_m.lk.pos.c':parseInt(c),
+                                    'strt_m.lk.pos.stc':parseInt(stc)
+                                },
+                                {
+                                    $pull:{
+                                        'strt_m.$[].lk' : {
+                                            link: link , 
+                                            'pos.c': parseInt(c), 
+                                            'pos.stc':parseInt(stc)
+                                        }
+                                    }
+                                });
+
+                                if (test.result.nModified !== 1)
+                                    throw new Error(test.result.nModified);
+                                break;
+                            }
+                        }
+                        res.json({res:'complete'});
+                        break;   
+                    }
                 }
             }
         } else {
@@ -218,7 +348,7 @@ async function insert(req, res) {
             await createListing(client, query, VIDEO_COLLECTION)
         }
 
-        // SB_WORD INSERT
+        // INSERT into SB_ENG_BASE  
         let wordList = JSON.parse(fs.readFileSync(LIST_OF_WORD, "utf8"));
 
         for (let i = 0; i < query['c'].length; ++i) {
@@ -243,7 +373,7 @@ async function insert(req, res) {
                             const ctListing = { 
                                 _id: ct.hashCode(), 
                                 rt: rt,
-                                m: [{  
+                                wd_m: [{  
                                     lt: data['lt'],
                                     lk:[{
                                         source:query.source,
@@ -255,7 +385,8 @@ async function insert(req, res) {
                                             wd:k
                                         }
                                     }]
-                                }]
+                                }],
+                                strt_m:[]
                             };
                             await insertBase(ctListing, ct.hashCode());
 
@@ -263,7 +394,7 @@ async function insert(req, res) {
                                 const rtListing = { 
                                     _id: rt.hashCode(), 
                                     rt: rt,
-                                    m: [{  
+                                    wd_m: [{  
                                         lt: data['lt'],
                                         lk:[{
                                             source:query.source,
@@ -275,7 +406,8 @@ async function insert(req, res) {
                                                 wd:k
                                             }
                                         }]
-                                    }]
+                                    }],
+                                    strt_m:[]
                                 };
                                 await insertBase(rtListing, rt.hashCode());
                             }
@@ -289,37 +421,37 @@ async function insert(req, res) {
                                     let second = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
                                         _id:listing._id,
                                         rt:listing.rt,
-                                        'm.lt': listing.m[0].lt
+                                        'wd_m.lt': listing.wd_m[0].lt
                                     });
 
                                     if (second === null) {
                                         let third = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
                                             _id:listing._id,
                                             rt:listing.rt,
-                                            'm.lt': listing.m[0].lt,
-                                            'm.lk.link': listing.m[0].lk[0].link,
-                                            'm.lk.pos.c': listing.m[0].lk[0].pos.c,
-                                            'm.lk.pos.stc': listing.m[0].lk[0].pos.stc,
-                                            'm.lk.pos.wd': listing.m[0].lk[0].pos.wd
+                                            'wd_m.lt': listing.wd_m[0].lt,
+                                            'wd_m.lk.link': listing.wd_m[0].lk[0].link,
+                                            'wd_m.lk.pos.c': listing.wd_m[0].lk[0].pos.c,
+                                            'wd_m.lk.pos.stc': listing.wd_m[0].lk[0].pos.stc,
+                                            'wd_m.lk.pos.wd': listing.wd_m[0].lk[0].pos.wd
                                         });
 
                                         if (third === null) {
-                                            const m = listing.m[0], lk=m.lk[0];
-                                            if (result.m.length === 0) {
+                                            const wd_m = listing.wd_m[0], lk=wd_m.lk[0];
+                                            if (result.wd_m.length === 0) {
                                                 const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
                                                     { _id: result._id },
-                                                    { $push: { 'm': m } }
+                                                    { $push: { 'wd_m': wd_m } }
                                                 );
                                                 if (test.result.nModified !== 1) {
                                                     throw new Error(test.result.nModified)
                                                 }
                                             } else {
                                                 let isExist = false;
-                                                for (let l = 0; l < result.m.length; ++l) {
-                                                    if (result.m[l].lt === m.lt) {
+                                                for (let l = 0; l < result.wd_m.length; ++l) {
+                                                    if (result.wd_m[l].lt === wd_m.lt) {
                                                         const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
-                                                            { _id: result._id, 'm.lt':m.lt },
-                                                            { $push:{ 'm.$.lk': lk } }
+                                                            { _id: result._id, 'wd_m.lt':wd_m.lt },
+                                                            { $push:{ 'wd_m.$.lk': lk } }
                                                         );
                                                         if (test.result.nModified !== 1) {
                                                             throw new Error(test.result.nModified)
@@ -331,7 +463,7 @@ async function insert(req, res) {
                                                 if (!isExist) {
                                                     const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
                                                         { _id: result._id },
-                                                        { $push: { 'm': m } }
+                                                        { $push: { 'wd_m': wd_m } }
                                                     );
                                                     if (test.result.nModified !== 1) {
                                                         throw new Error(test.result.nModified)
@@ -348,12 +480,47 @@ async function insert(req, res) {
                             }
                         }
                     }
+
+                    if (strt) {
+                        for (let k = 0; k < strt.length; ++k) {
+                            for (let l = 0; l < strt[k].rt.length; ++l) {
+                                const rt = strt[k].rt[l],
+                                    strt_m = {  
+                                        t: strt[k].t,
+                                        usg: strt[k].usg,
+                                        cmt: strt[k].cmt,
+                                        lk:[{
+                                            source:query.source,
+                                            stc:stc[j].ct,
+                                            link: link,
+                                            pos: {
+                                                c:i,
+                                                stc:j,
+                                                from:strt[k].from
+                                            }
+                                        }]
+                                    };
+
+                                
+                                const result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
+                                    { _id: rt.hashCode() },
+                                    { $push: { 'strt_m': strt_m } }
+                                );
+                                if (result.result.nModified !== 1) {
+                                    throw new Error(result.result.nModified)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
+        // to re-video
         fs.writeFileSync(LIST_OF_WORD, JSON.stringify(wordList, null, "\t"), "utf-8");
+        // to re-sensebe
         fs.writeFileSync(path.join('../re-sensebe', LIST_OF_WORD), JSON.stringify(wordList, null, "\t"), "utf-8");
+
         res.json({res:'complete'});
     } catch (e) {
         console.error(e.stack);
@@ -403,28 +570,30 @@ async function insertCanvasInfo(req, res) {
     }
 }
 
-// DB
+// DB Transaction
 app.post('/api/insert', (req, res) => insert(req, res));
 app.post('/api/insertCanvasInfo', (req, res) => insertCanvasInfo(req, res));
 
 app.get('/api/getCanvasInfo', (req, res) => getCanvasInfo(req, res));
+app.get('/api/getWdInfo', (req, res) => getWdInfo(req, res));
+app.get('/api/getStrtInfo', (req, res) => getStrtInfo(req, res));
 app.get('/api/deleteWdBase', (req, res) => deleteWdBase(req, res));
+app.get('/api/deleteStrtFromBase', (req, res) => deleteStrtFromBase(req, res));
 
 // NLPK
 app.get('/api/tokenizeStc', (req, res) => tokenizeStc(req, res));
 app.get('/api/parseStc', (req, res) => parseStc(req, res));
 
+//
 app.get('/api/getFileList', (req, res) => getFileList(res));
 app.get('/api/getFile', (req, res) => getFile(req, res));
-app.get('/api/getStrtOptionList', (req, res) => getStrtOptionList(req, res));
-app.get('/api/addNewStrt', (req, res) => addNewStrt(req, res));
 app.get('/api/getSourceList', (req, res) => getSourceList(res));
 
 app.listen(process.env.PORT || 8080, () => console.log(`Listening on port ${process.env.PORT || 8080}!`));
 
 async function createListing(client, newListing, collection){
     const result = await client.db(DATABASE_NAME).collection(collection).insertOne(newListing);
-    console.log(`New listing created with the following id: ${result.insertedId}(${newListing['link']})`);
+    console.log(`New listing created with the following id: ${result.insertedId}(${newListing.rt})`);
 }
 
 async function replaceListing(client, listing, collection) {

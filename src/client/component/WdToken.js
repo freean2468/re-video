@@ -8,10 +8,12 @@ export default class WdToken extends Component {
       super(props);
 
       this.state = {
-        isDisabled : true
+        isDisabled : true,
+        ltList : []
       };
 
       this.handleChange = this.handleChange.bind(this);
+      this.loadLtList = this.loadLtList.bind(this);
       this.handleClickDelWd = this.handleClickDelWd.bind(this);
       this.handleClickToggler = this.handleClickToggler.bind(this);
   
@@ -37,12 +39,24 @@ export default class WdToken extends Component {
   
       // computed property
       if (item[key] === undefined){
-        console.log('undefined!')
+        console.log(`Adding new (key,value) : (${key},${value})`);
         item[key] = '';
       }
       item[key] = value;
   
       this.updateWdToken(item, idx)
+    }
+
+    loadLtList() {
+      fetch(`/api/getWdInfo?ct=${this.props.wd.ct}`)
+          .then(res => res.json())
+          .then(res => {
+            if (res.res !== 0) {
+              this.setState({ltList:res.res});  
+            } else {
+              console.log('[OnFocusLt] No Lt Registered')
+            }
+          })
     }
   
     handleClickDelWd(){
@@ -55,6 +69,7 @@ export default class WdToken extends Component {
       this.setState({isDisabled:!this.state.isDisabled});
 
       if (isDisabled) {
+        this.loadLtList();
         fetch(`/api/deleteWdBase?ct=${this.props.wd.ct}&lt=${this.props.wd.lt}&link=${this.props.link}
               &c=${this.props.c}&stc=${this.props.stc}&wd=${this.props.idx}`)
           .then(res => res.json())
@@ -68,6 +83,7 @@ export default class WdToken extends Component {
         }
       } else {
         this.insert();
+        this.setState({ltList:[]});
       }
     }
   
@@ -114,8 +130,21 @@ export default class WdToken extends Component {
             disabled={(this.state.isDisabled)? "disabled" : ""}
           />
           <button
+            className="Toggler"
             onClick={this.handleClickToggler}
           >Toggler</button>
+          {(this.state.ltList !== []) &&
+            <>
+              ltList:
+              <select className="LtList" defaultValue={this.props.wd.lt} 
+                    onChange={(e) => this.handleChange('lt', e.target.value)}
+                    disabled={(this.state.isDisabled)? "disabled" : ""}
+              > 
+                {this.state.ltList.map((item, idx)=>
+                <option key={idx} value={item}> {item} </option>)}
+              </select>
+            </>
+          }
         </div>
       );
     }
