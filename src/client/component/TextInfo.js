@@ -14,7 +14,7 @@ export default class TextInfo extends Component {
       this.handleClickOfParse = this.handleClickOfParse.bind(this)
   
       this.insert = props.insert.bind(this);
-      this.updateTextInfo = props.updateTextInfo.bind(this)
+      this.updateTextInfo = props.updateTextInfo.bind(this);
     }
   
     handleClickOfParse(){
@@ -84,6 +84,7 @@ export default class TextInfo extends Component {
                   insert={this.insert}
                   updateStcToken={this.updateStcToken}
                   delStc={this.delStc}
+                  audioInfo={this.props.audioInfo}
                 />)
             }
           </div>

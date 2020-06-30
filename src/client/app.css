@@ -19,8 +19,6 @@ button { background-color : black; color:white; border-radius:20px; border:0px}
 /* Main */
 .Main { flex: 8 }
 
-.VideoInfo { width : 90vw; }
-.VideoInfo input { margin-right : 10px; }
 .DisplayVideoInfo { font-size : 12px !important }
 
 .SceneCut { border: black 2px solid; margin: 5px 5px}

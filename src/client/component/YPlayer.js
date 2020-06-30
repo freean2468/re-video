@@ -57,6 +57,29 @@ export default class YPlayer extends Component {
     this.state.player.seekTo(seconds);
   }
 
+  handleOnStateChange(event) {
+    switch(event.data){
+        case YT.PlayerState.CUED:
+            break;
+        case YT.PlayerState.PAUSED:
+            break;
+        case YT.PlayerState.ENDED:
+            break;
+        case YT.PlayerState.PLAYING:
+            event.target.pauseVideo();
+            break;
+        case YT.PlayerState.BUFFERING:
+            break;
+    }
+  }
+ 
+  handleOnReady(event) {
+    // access to player in all event handlers via event.target
+    event.target.pauseVideo();
+    this.setState({player:event.target});
+    event.target.seekTo(parseInt(this.props.time));
+  }
+
   render() {
     const opts = {
       height: '1080',
@@ -93,28 +116,5 @@ export default class YPlayer extends Component {
         }
       </>
     );
-  }
-
-  handleOnStateChange(event) {
-    switch(event.data){
-        case YT.PlayerState.CUED:
-            break;
-        case YT.PlayerState.PAUSED:
-            break;
-        case YT.PlayerState.ENDED:
-            break;
-        case YT.PlayerState.PLAYING:
-            event.target.pauseVideo();
-            break;
-        case YT.PlayerState.BUFFERING:
-            break;
-    }
-  }
- 
-  handleOnReady(event) {
-    // access to player in all event handlers via event.target
-    event.target.pauseVideo();
-    this.setState({player:event.target});
-    event.target.seekTo(parseInt(this.props.time));
   }
 }

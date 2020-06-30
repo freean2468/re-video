@@ -21,7 +21,6 @@ const VIDEO_ARCHIVE_PATH = "collections/SB_VIDEO"
 const VIDEO_COLLECTION = "SB_VIDEO"
 const ENG_BASE_COLLECTION = "SB_ENG_BASE"
 const CANVAS_COLLECTION = "SB_CANVAS"
-const STRT_COLLECTION = "SB_STRT"
 
 // lists
 const LIST_OF_WORD = "list_word.json"
@@ -29,10 +28,41 @@ const LIST_OF_SOURCE = "list_source.json"
 
 const PASSWORD = fs.readFileSync("./pw.txt", "utf8")
 
-function getSourceList(res) {
-    const json = JSON.parse(fs.readFileSync(LIST_OF_SOURCE, 'utf-8'))
+function getVideo(req, res) {
+    console.log(req.query);
+    const name = req.query.name, source = req.query.source;
+    let path = '/Users/hoon-ilsong/Movies/ForYoutube/';
+    console.log('name : ', name);
 
-    res.json(json)
+    switch(source) {
+        case '0': // witcher3
+            path += 'Witcher3/'
+            break;
+    }
+
+    path += name;
+
+    // create read stream
+    const readStream = fs.createReadStream(path);
+    
+    // This will wait until we know the readable stream is actually valid before piping
+    readStream.on('open', function () {
+        // This just pipes the read stream to the response object (which goes to the client)
+        readStream.pipe(res);
+    });
+
+    // This catches any errors that happen while creating the readable stream (usually invalid names)
+    readStream.on('error', function(err) {
+        res.end(err);
+    });
+}
+
+function getSourceList(res) {
+    const json = JSON.parse(fs.readFileSync(LIST_OF_SOURCE, 'utf-8'));
+
+    fs.writeFileSync(path.join('../re-sensebe', LIST_OF_SOURCE), JSON.stringify(json, null, "\t"), "utf-8");
+
+    res.json(json);
 }
 
 function getFileList(res) {
@@ -148,6 +178,37 @@ async function getStrtInfo(req, res) {
     }
 }
 
+async function deleteVideo(req, res) {
+    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`;
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    const query = req.query, id = query.id.trim()
+
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect();
+
+        let result = await client.db(DATABASE_NAME).collection(VIDEO_COLLECTION).findOne({ _id: id });
+
+        if (result) {
+            result = await client.db(DATABASE_NAME).collection(VIDEO_COLLECTION).deleteOne({ _id: id });
+            if (result.result.n != 1) {
+                throw new Error(result.result.n);
+            }
+            console.log(`[DeleteVideo] deleted video id(${id})`);
+            fs.unlinkSync(path.join(VIDEO_ARCHIVE_PATH, id+'.json'));
+        } else {
+            throw new Error('Something wrong');
+        }
+
+        res.json({res:`[DeleteVideo] Deleted(${result.result.n})`})
+    } catch (e) {
+        console.error(e.stack);
+        res.json({res:e});
+    } finally {
+        await client.close()
+    }
+}
+
 async function deleteWdBase(req, res) {
     const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`;
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -234,9 +295,8 @@ async function deleteStrtFromBase(req, res) {
     const query = req.query, rt = query.rt.trim(), t = query.t.trim(), link = query.link.trim()
         c = query.c.trim(), stc = query.stc.trim();
 
-        console.log(c);
-        console.log(stc);
-        // what will happen if rt's array?
+        
+    // what will happen if rt's array?
     console.log('[DeleteStrt] ', rt);
 
     try {
@@ -327,26 +387,23 @@ async function insert(req, res) {
         await client.connect()
 
         let result = undefined
-        let link = query["link"]
+        const _id = query._id
         
         // SB_VIDEO ISNERT
-        if (query['_id']) 
+        if (_id) 
             result = await client.db(DATABASE_NAME).collection(VIDEO_COLLECTION).findOne({ _id: query['_id'] });
             
         if (result) {
-            await replaceListing(client, query, VIDEO_COLLECTION)
-            _id = query["_id"]
-            delete query["_id"]
-            console.log('[VIDEO_REPLACE_LISTING] _id : ',_id)
-            fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH, _id+'.json'), JSON.stringify(query, null, "\t"), "utf-8")
+            await replaceListing(client, query, VIDEO_COLLECTION);
+            console.log('[VIDEO_REPLACE_LISTING] _id : ',_id);
         } else {
-            fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH, link+'.json'), JSON.stringify(query, null, "\t"), "utf-8")
-            if (query['_id'] === undefined)
-                query['_id'] = link
-
-            console.log('[VIDEO_CREATE_LISTING] _id : ', query['_id'])
-            await createListing(client, query, VIDEO_COLLECTION)
+            console.log('[VIDEO_CREATE_LISTING] _id : ', query._id);
+            await createListing(client, query, VIDEO_COLLECTION);
         }
+
+        delete query._id;
+        console.log(_id);
+        fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH, _id+'.json'), JSON.stringify(query, null, "\t"), "utf-8")
 
         // INSERT into SB_ENG_BASE  
         let wordList = JSON.parse(fs.readFileSync(LIST_OF_WORD, "utf8"));
@@ -359,6 +416,69 @@ async function insert(req, res) {
                     let wd = stc[j]['wd'], strt = stc[j]['strt'];
 
                     if (wd) {
+                        async function insertBase(listing, hasiId) {
+                            let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({_id:hasiId});
+
+                            if (result === null) {
+                                await createListing(client, listing, ENG_BASE_COLLECTION);
+                            } else {
+                                let second = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
+                                    _id:listing._id,
+                                    rt:listing.rt,
+                                    'wd_m.lt': listing.wd_m[0].lt
+                                });
+
+                                if (second === null) {
+                                    let third = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
+                                        _id:listing._id,
+                                        rt:listing.rt,
+                                        'wd_m.lt': listing.wd_m[0].lt,
+                                        'wd_m.lk.link': listing.wd_m[0].lk[0].link,
+                                        'wd_m.lk.pos.c': listing.wd_m[0].lk[0].pos.c,
+                                        'wd_m.lk.pos.stc': listing.wd_m[0].lk[0].pos.stc,
+                                        'wd_m.lk.pos.wd': listing.wd_m[0].lk[0].pos.wd
+                                    });
+
+                                    if (third === null) {
+                                        const wd_m = listing.wd_m[0], lk=wd_m.lk[0];
+                                        if (result.wd_m.length === 0) {
+                                            const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
+                                                { _id: result._id },
+                                                { $push: { 'wd_m': wd_m } }
+                                            );
+                                            if (test.result.nModified !== 1) {
+                                                throw new Error(test.result.nModified)
+                                            }
+                                        } else {
+                                            let isExist = false;
+                                            for (let l = 0; l < result.wd_m.length; ++l) {
+                                                if (result.wd_m[l].lt === wd_m.lt) {
+                                                    const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
+                                                        { _id: result._id, 'wd_m.lt':wd_m.lt },
+                                                        { $push:{ 'wd_m.$.lk': lk } }
+                                                    );
+                                                    if (test.result.nModified !== 1) {
+                                                        throw new Error(test.result.nModified)
+                                                    }
+                                                    isExist = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (!isExist) {
+                                                const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
+                                                    { _id: result._id },
+                                                    { $push: { 'wd_m': wd_m } }
+                                                );
+                                                if (test.result.nModified !== 1) {
+                                                    throw new Error(test.result.nModified)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         for (let k = 0; k < wd.length; ++k) {
                             const data = wd[k], ct = data['ct'].toLowerCase();
                             let rt = undefined;
@@ -378,7 +498,7 @@ async function insert(req, res) {
                                     lk:[{
                                         source:query.source,
                                         stc:stc[j].ct,
-                                        link: link,
+                                        link: _id,
                                         pos: {
                                             c:i,
                                             stc:j,
@@ -399,7 +519,7 @@ async function insert(req, res) {
                                         lk:[{
                                             source:query.source,
                                             stc:stc[j].ct,
-                                            link: link,
+                                            link: _id,
                                             pos: {
                                                 c:i,
                                                 stc:j,
@@ -411,69 +531,6 @@ async function insert(req, res) {
                                 };
                                 await insertBase(rtListing, rt.hashCode());
                             }
-
-                            async function insertBase(listing, hasiId) {
-                                let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({_id:hasiId});
-
-                                if (result === null) {
-                                    await createListing(client, listing, ENG_BASE_COLLECTION);
-                                } else {
-                                    let second = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
-                                        _id:listing._id,
-                                        rt:listing.rt,
-                                        'wd_m.lt': listing.wd_m[0].lt
-                                    });
-
-                                    if (second === null) {
-                                        let third = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
-                                            _id:listing._id,
-                                            rt:listing.rt,
-                                            'wd_m.lt': listing.wd_m[0].lt,
-                                            'wd_m.lk.link': listing.wd_m[0].lk[0].link,
-                                            'wd_m.lk.pos.c': listing.wd_m[0].lk[0].pos.c,
-                                            'wd_m.lk.pos.stc': listing.wd_m[0].lk[0].pos.stc,
-                                            'wd_m.lk.pos.wd': listing.wd_m[0].lk[0].pos.wd
-                                        });
-
-                                        if (third === null) {
-                                            const wd_m = listing.wd_m[0], lk=wd_m.lk[0];
-                                            if (result.wd_m.length === 0) {
-                                                const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
-                                                    { _id: result._id },
-                                                    { $push: { 'wd_m': wd_m } }
-                                                );
-                                                if (test.result.nModified !== 1) {
-                                                    throw new Error(test.result.nModified)
-                                                }
-                                            } else {
-                                                let isExist = false;
-                                                for (let l = 0; l < result.wd_m.length; ++l) {
-                                                    if (result.wd_m[l].lt === wd_m.lt) {
-                                                        const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
-                                                            { _id: result._id, 'wd_m.lt':wd_m.lt },
-                                                            { $push:{ 'wd_m.$.lk': lk } }
-                                                        );
-                                                        if (test.result.nModified !== 1) {
-                                                            throw new Error(test.result.nModified)
-                                                        }
-                                                        isExist = true;
-                                                        break;
-                                                    }
-                                                }
-                                                if (!isExist) {
-                                                    const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
-                                                        { _id: result._id },
-                                                        { $push: { 'wd_m': wd_m } }
-                                                    );
-                                                    if (test.result.nModified !== 1) {
-                                                        throw new Error(test.result.nModified)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                             
                             if (wordList[ct] === undefined) {
                                 wordList[ct] = hashId;
@@ -482,6 +539,16 @@ async function insert(req, res) {
                     }
 
                     if (strt) {
+                        async function insertStrt(strt, id) {
+                            const result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
+                                { _id: id },
+                                { $push: { 'strt_m': strt } }
+                            );
+                            if (result.result.nModified !== 1) {
+                                throw new Error(result.result.nModified)
+                            }
+                        }
+
                         for (let k = 0; k < strt.length; ++k) {
                             for (let l = 0; l < strt[k].rt.length; ++l) {
                                 const rt = strt[k].rt[l],
@@ -492,7 +559,7 @@ async function insert(req, res) {
                                         lk:[{
                                             source:query.source,
                                             stc:stc[j].ct,
-                                            link: link,
+                                            link: _id,
                                             pos: {
                                                 c:i,
                                                 stc:j,
@@ -501,13 +568,25 @@ async function insert(req, res) {
                                         }]
                                     };
 
-                                
-                                const result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
-                                    { _id: rt.hashCode() },
-                                    { $push: { 'strt_m': strt_m } }
+                                let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne(
+                                    { _id: rt.hashCode() }
                                 );
-                                if (result.result.nModified !== 1) {
-                                    throw new Error(result.result.nModified)
+
+                                if (result.strt_m.length === 0) {
+                                    await insertStrt(strt_m, rt.hashCode());
+                                } else {
+                                    result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
+                                        _id: rt.hashCode(),
+                                        'strt_m.t':strt_m.t,
+                                        'strt_m.usg':strt_m.usg,
+                                        'strt_m.lk.pos.c':strt_m.lk[0].pos.c,
+                                        'strt_m.lk.pos.stc':strt_m.lk[0].pos.stc,
+                                        'strt_m.lk.pos.from':strt_m.lk[0].pos.from
+                                    });
+
+                                    if (result === null) {
+                                        await insertStrt(strt_m, rt.hashCode());
+                                    }
                                 }
                             }
                         }
@@ -577,6 +656,7 @@ app.post('/api/insertCanvasInfo', (req, res) => insertCanvasInfo(req, res));
 app.get('/api/getCanvasInfo', (req, res) => getCanvasInfo(req, res));
 app.get('/api/getWdInfo', (req, res) => getWdInfo(req, res));
 app.get('/api/getStrtInfo', (req, res) => getStrtInfo(req, res));
+app.get('/api/deleteVideo', (req, res) => deleteVideo(req, res));
 app.get('/api/deleteWdBase', (req, res) => deleteWdBase(req, res));
 app.get('/api/deleteStrtFromBase', (req, res) => deleteStrtFromBase(req, res));
 
@@ -584,7 +664,8 @@ app.get('/api/deleteStrtFromBase', (req, res) => deleteStrtFromBase(req, res));
 app.get('/api/tokenizeStc', (req, res) => tokenizeStc(req, res));
 app.get('/api/parseStc', (req, res) => parseStc(req, res));
 
-//
+// File
+app.get('/api/getVideo', (req, res) => getVideo(req, res));
 app.get('/api/getFileList', (req, res) => getFileList(res));
 app.get('/api/getFile', (req, res) => getFile(req, res));
 app.get('/api/getSourceList', (req, res) => getSourceList(res));

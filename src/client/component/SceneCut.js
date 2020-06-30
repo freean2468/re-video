@@ -76,7 +76,7 @@ export default class SceneCut extends Component {
             container="iframe-container"  class="iframe" 
             cv={this.props.cut['cv']}
             updateCanvasInfo={this.updateCanvasInfo}
-            />
+          />
           <div>
             {et} : 
             <input
@@ -94,6 +94,9 @@ export default class SceneCut extends Component {
             insert={this.insert}
             updateTextInfo={this.updateTextInfo}
             link={this.props.link}
+            st={this.props.cut.st}
+            et={this.props.cut.et}
+            audioInfo={this.props.audioInfo}
           />
           <div>
             {lt} : 

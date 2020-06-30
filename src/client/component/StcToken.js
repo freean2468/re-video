@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import WdToken from './WdToken';
 import StrtToken from './StrtToken';
+import VideoSynchronizer from './VideoSynchronizer';
+import './stctoken.css';
 
 export default class StcToken extends Component {
     /*
@@ -9,7 +11,12 @@ export default class StcToken extends Component {
     */
     constructor(props) {
       super(props)
-      this.state = { lt : '' };
+      this.state = { 
+        lt : ''
+      };
+
+      this.videoRef = React.createRef();
+
       this.handleChange = this.handleChange.bind(this);
       this.handleClickTokenize = this.handleClickTokenize.bind(this);
       this.handleClickDelStd = this.handleClickDelStd.bind(this);
@@ -167,6 +174,8 @@ export default class StcToken extends Component {
               </tr>
             </tbody>
           </table>
+          <br></br>
+          <VideoSynchronizer link={this.props.link} audioInfo={this.props.audioInfo}/>
           {this.props.stc['wd'] &&
             this.props.stc['wd'].map((wd, idx) =>
               <WdToken 
