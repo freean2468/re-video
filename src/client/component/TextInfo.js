@@ -84,7 +84,9 @@ export default class TextInfo extends Component {
                   insert={this.insert}
                   updateStcToken={this.updateStcToken}
                   delStc={this.delStc}
-                  audioInfo={this.props.audioInfo}
+                  buffer={this.props.buffer}
+                  st={this.props.st}
+                  et={this.props.et}
                 />)
             }
           </div>

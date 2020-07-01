@@ -12,10 +12,7 @@ export default class VideoInfo extends Component {
         isDisabled : true,
         videoInfo : props.videoInfo,
         sourceList : [],
-        audioInfo : {
-          channelData : new Float32Array(),
-          length : null
-        }
+        buffer : null
       };
 
       this.handleChange = this.handleChange.bind(this);
@@ -60,12 +57,7 @@ export default class VideoInfo extends Component {
                     audioCtx = new(window.AudioContext || window.webkitAudioContext)();
 
               audioCtx.decodeAudioData(arrayBuffer, function(buffer) {
-                  that.setState({
-                    audioInfo : {
-                      channelData : buffer.getChannelData(0),
-                      length:buffer.length
-                    }
-                  });
+                  that.setState({ buffer : buffer });
                 },
                 function (e) {
                   "Error with decoding audio data" + e.error
@@ -165,7 +157,7 @@ export default class VideoInfo extends Component {
                   updateSceneCut={this.updateSceneCut}
                   insert={this.handleClickInsert}
                   link={this.state.videoInfo._id}
-                  audioInfo={this.state.audioInfo}
+                  buffer={this.state.buffer}
                 />)
             }
           </div>

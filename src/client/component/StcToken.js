@@ -175,7 +175,11 @@ export default class StcToken extends Component {
             </tbody>
           </table>
           <br></br>
-          <VideoSynchronizer link={this.props.link} audioInfo={this.props.audioInfo}/>
+          <VideoSynchronizer st={this.props.st} 
+                            et={this.props.et} 
+                            link={this.props.link} 
+                            buffer={this.props.buffer}
+          />
           {this.props.stc['wd'] &&
             this.props.stc['wd'].map((wd, idx) =>
               <WdToken 
