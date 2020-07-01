@@ -34,6 +34,7 @@ export default class StcToken extends Component {
       this.delWd = this.delWd.bind(this);
 
       this.updateWdToken = this.updateWdToken.bind(this);
+      this.updateWdTokenSt = this.updateWdTokenSt.bind(this);
     }
   
     handleChange(key, value){  
@@ -88,6 +89,7 @@ export default class StcToken extends Component {
     updateWdToken(wd, idx){
       let item = this.props.stc['wd'];
       item[idx] = wd;
+      item[idx].st = item[idx].st || '';
   
       let lt = '';
   
@@ -97,6 +99,13 @@ export default class StcToken extends Component {
         lt : lt
       })
   
+      this.handleChange('wd', item);
+    }
+
+    updateWdTokenSt(idx, st) {
+      let item = this.props.stc.wd;
+      item[idx].st = st
+
       this.handleChange('wd', item);
     }
   
@@ -158,27 +167,13 @@ export default class StcToken extends Component {
             value={this.props.stc[pp]}
             onChange={(e) => this.handleChange(pp, e.target.value)}
           />
-          <table>
-            <tbody>
-              <tr>
-                {this.props.stc['wd'] &&
-                  this.props.stc['wd'].map((wd, idx) =>
-                    <td key={idx}>{idx}</td>)
-                }
-              </tr>
-              <tr>
-              {this.props.stc['wd'] &&
-                  this.props.stc['wd'].map((wd, idx) =>
-                    <td key={idx}>{wd.ct}</td>)
-                }
-              </tr>
-            </tbody>
-          </table>
           <br></br>
           <VideoSynchronizer st={this.props.st} 
                             et={this.props.et} 
                             link={this.props.link} 
                             buffer={this.props.buffer}
+                            wd={this.props.stc.wd}
+                            updateWdTokenSt={this.updateWdTokenSt}
           />
           {this.props.stc['wd'] &&
             this.props.stc['wd'].map((wd, idx) =>

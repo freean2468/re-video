@@ -46,6 +46,7 @@ button { background-color : black; color:white; border-radius:20px; border:0px}
 .TextInfo .StcToken .StrtToken { margin-left : 40px; border : darkcyan 2px solid;}
 .TextInfo .StcToken .WdToken { margin-left : 40px; border : darkcyan 2px solid;}
 .TextInfo .StcToken .WdToken .Toggler {margin-right:10px;}
+.TextInfo .StcToken .WdToken .St,
 .TextInfo .StcToken .WdToken .Dp,
 .TextInfo .StcToken .WdToken .Ct,
 .TextInfo .StcToken .WdToken .Rt,

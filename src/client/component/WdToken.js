@@ -102,7 +102,14 @@ export default class WdToken extends Component {
           <button
             onClick={this.handleClickDelWd}
           >Del Wd</button>
-          [{this.props.idx}] {dp}:
+          [{this.props.idx}] 
+          st:
+          <input
+            className="St"
+            value={this.props.wd.st}
+            onChange={(e) => this.handleChange('st', e.target.value)}
+          />
+          {dp}:
           <input
             className="Dp"
             value={tempDp}

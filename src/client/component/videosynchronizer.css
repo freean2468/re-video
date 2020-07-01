@@ -1,12 +1,12 @@
-/* .VideoSynchronizer {
-    display:block;
-    position:relative;
-    width: 70%;
+.VideoSynchronizer .WdTable {
+    width:1324px;
+    border:1px solid black !important;
 }
 
-.VideoSynchronizer .VideoSync {
-    display:block;
-    position:relative;
-    width : 900px;
-    height : 150px;
-} */
+.VideoSynchronizer td {
+    border:1px solid black !important;
+}
+
+.VideoSynchronizer td:hover {
+    background-color:#bbbbbb;
+}
