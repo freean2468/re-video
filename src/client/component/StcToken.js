@@ -35,6 +35,8 @@ export default class StcToken extends Component {
 
       this.updateWdToken = this.updateWdToken.bind(this);
       this.updateWdTokenSt = this.updateWdTokenSt.bind(this);
+
+      this.getStcSt = props.getStcSt.bind(this);
     }
   
     handleChange(key, value){  
@@ -174,6 +176,8 @@ export default class StcToken extends Component {
                             buffer={this.props.buffer}
                             wd={this.props.stc.wd}
                             updateWdTokenSt={this.updateWdTokenSt}
+                            getStcSt={this.getStcSt}
+                            idx={this.props.idx}
           />
           {this.props.stc['wd'] &&
             this.props.stc['wd'].map((wd, idx) =>

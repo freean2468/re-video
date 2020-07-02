@@ -12,10 +12,10 @@ export default class VideoSynchronizer extends Component {
             isPlaying : false,
             time : null,
             audioCtx : null,
-            st : null,
-            et : null,
 
-            selectedIdx : null
+            selectedIdx : null,
+
+            maxEt : null
         }
   
         this.cvRef = React.createRef();
@@ -23,6 +23,7 @@ export default class VideoSynchronizer extends Component {
         this.handleOnMouseMove = this.handleOnMouseMove.bind(this);
         this.handleOnClick = this.handleOnClick.bind(this);
         this.handleOnClickWd = this.handleOnClickWd.bind(this);
+        this.handleOnChangeSyncPanel = this.handleOnChangeSyncPanel.bind(this);
 
         this.drawSineWave = this.drawSineWave.bind(this);
         this.playAudio = this.playAudio.bind(this);
@@ -31,6 +32,7 @@ export default class VideoSynchronizer extends Component {
         this.getDurationOffsetX = this.getDurationOffsetX.bind(this);
         this.getStcDuration = this.getStcDuration.bind(this);
         this.getWdDurationX = this.getWdDurationX.bind(this);
+        this.getStcSt = this.getStcSt.bind(this);
 
         this.updateWdTokenSt = props.updateWdTokenSt.bind(this);
     }
@@ -65,8 +67,16 @@ export default class VideoSynchronizer extends Component {
         }
     }
 
+    handleOnChangeSyncPanel(e) {
+        this.setState({maxEt:e.target.value});
+    }
+
+    getStcSt() {
+        return this.props.getStcSt(this.props.idx) || this.props.st;
+    }
+
     getChannelOffsetX(percentage) {
-        const st = this.props.st, et = this.props.et;
+        const st = this.getStcSt(), et = this.state.maxEt || this.props.et;
         const etChannelOffset = et / this.props.buffer.duration * this.props.buffer.length;
         const stChannelOffset = st / this.props.buffer.duration * this.props.buffer.length;
         const adjustedOffset = stChannelOffset + (percentage*(etChannelOffset-stChannelOffset));
@@ -75,26 +85,20 @@ export default class VideoSynchronizer extends Component {
     }
 
     getDurationOffsetX(percentage) {
-        const st = this.props.st, et = this.props.et;
+        const st = this.getStcSt(), et = this.state.maxEt || this.props.et;
         const duration = et - st;
 
         return parseFloat(parseFloat(st) + parseFloat(percentage * duration)).toFixed(2);
     }
 
     getStcDuration() {
-        let duration = null;
-
-        if (this.state.st !== null && this.state.et !== null) {
-            duration = this.state.et - this.state.st;
-        } else {
-            duration = this.props.et - this.state.st;
-        }
+        let duration = (this.state.maxEt || this.props.et) - this.getStcSt();
 
         return duration;
     }
 
     getWdDurationX(durationX) {
-        return parseFloat(parseFloat(durationX-this.props.st) / this.getStcDuration() * this.cvRef.current.offsetWidth).toFixed(2);
+        return parseFloat(parseFloat(durationX-this.getStcSt()) / this.getStcDuration() * this.cvRef.current.offsetWidth).toFixed(2);
     }
 
     playAudio(e, wantedDuration) {
@@ -171,7 +175,7 @@ export default class VideoSynchronizer extends Component {
                 sinewaveСanvasCtx.beginPath();
                 if (this.state.isPlaying) {
                     const timeDiff = (this.state.audioCtx.currentTime - this.state.time);
-                    let offsetX = timeDiff/(this.props.et - this.props.st);
+                    let offsetX = timeDiff/this.getStcDuration();
                     offsetX = offsetX*this.cvRef.current.offsetWidth;
                     sinewaveСanvasCtx.moveTo(this.state.clickX + offsetX, 0);
                     sinewaveСanvasCtx.lineTo(this.state.clickX + offsetX, height);
@@ -190,7 +194,7 @@ export default class VideoSynchronizer extends Component {
 
             for (let i=0; i <= width; i += width/10) {
                 let percentage = i/width;
-                sinewaveСanvasCtx.fillText(`${parseFloat(this.getStcDuration()*percentage+parseFloat(this.props.st)).toFixed(1)}`, i, 15);
+                sinewaveСanvasCtx.fillText(`${parseFloat(this.getStcDuration()*percentage+parseFloat(this.getStcSt())).toFixed(1)}`, i, 15);
             }
 
             // draw wd
@@ -203,7 +207,7 @@ export default class VideoSynchronizer extends Component {
                 } else {
                     durationX = this.getWdDurationX(durationX);
                 }
-                sinewaveСanvasCtx.fillText(`${this.props.wd[i].ct}`, durationX, height-15);
+                sinewaveСanvasCtx.fillText(`${this.props.wd[i].ct}`, durationX, height-10);
                 sinewaveСanvasCtx.beginPath();
                 sinewaveСanvasCtx.moveTo(durationX, 0);
                 sinewaveСanvasCtx.lineTo(durationX, height);
@@ -240,6 +244,10 @@ export default class VideoSynchronizer extends Component {
                 <canvas className="VideoSync" ref={this.cvRef}  width="1324" height="100"
                     onMouseMove={this.handleOnMouseMove}
                     onClick={this.handleOnClick}></canvas>
+                <input className="SyncPanel" type="range" min={this.getStcSt(this.props.idx)} max={this.props.et}
+                    onChange={this.handleOnChangeSyncPanel}
+                />
+                :maxEt ({this.state.maxEt})
             </div>
         );
     }

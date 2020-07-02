@@ -7,14 +7,16 @@ export default class TextInfo extends Component {
     */
     constructor(props) {
       super(props)
-      this.handleChange = this.handleChange.bind(this)
-      this.updateStcToken = this.updateStcToken.bind(this)
-      this.addStc = this.addStc.bind(this)
-      this.delStc = this.delStc.bind(this)
-      this.handleClickOfParse = this.handleClickOfParse.bind(this)
-  
-      this.insert = props.insert.bind(this);
+      this.handleChange = this.handleChange.bind(this);
+      this.handleClickOfParse = this.handleClickOfParse.bind(this);
+
+      this.addStc = this.addStc.bind(this);
+      this.delStc = this.delStc.bind(this);
+      this.getStcSt = this.getStcSt.bind(this);
+
+      this.updateStcToken = this.updateStcToken.bind(this);
       this.updateTextInfo = props.updateTextInfo.bind(this);
+      this.insert = props.insert.bind(this);
     }
   
     handleClickOfParse(){
@@ -56,6 +58,16 @@ export default class TextInfo extends Component {
       item['stc'].splice(idx, 1)
       this.updateTextInfo('t', item);
     }
+
+    getStcSt(idx) {
+      let st = 0;
+      if (idx === 0) {
+        st = this.props.t.stc[0].wd[0].st;
+      } else {
+        st = this.props.t.stc[idx-1].wd[this.props.t.stc[idx-1].wd.length-1].st;
+      }
+      return st;
+    }
   
     render() {
       return (
@@ -87,6 +99,7 @@ export default class TextInfo extends Component {
                   buffer={this.props.buffer}
                   st={this.props.st}
                   et={this.props.et}
+                  getStcSt={this.getStcSt}
                 />)
             }
           </div>
