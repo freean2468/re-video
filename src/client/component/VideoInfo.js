@@ -12,8 +12,10 @@ export default class VideoInfo extends Component {
         isDisabled : true,
         videoInfo : props.videoInfo,
         sourceList : [],
-        buffer : null
+        audioBuffer : null
       };
+
+      this.loadAudio = this.loadAudio.bind(this);
 
       this.handleChange = this.handleChange.bind(this);
       this.handleClickInsert = this.handleClickInsert.bind(this);
@@ -25,9 +27,13 @@ export default class VideoInfo extends Component {
         .then(res => res.json())
         .then(res => this.setState({sourceList:res.source}));
 
+      this.loadAudio();
+    }
+
+    loadAudio() {
       if (this.state.videoInfo.file !== undefined) {
         const that = this;
-        fetch(`/api/getVideo?source=${this.state.videoInfo.source}&name=${encodeURIComponent(this.state.videoInfo.file)}`)
+        fetch(`/api/getAudio?source=${this.state.videoInfo.source}&name=${encodeURIComponent(this.state.videoInfo.file)}`)
           .then(res => {
             const reader = res.body.getReader();
             let buffer = new Uint8Array(0);
@@ -35,7 +41,7 @@ export default class VideoInfo extends Component {
             function read(reader) {
               return reader.read().then(({ done, value }) => {
                 if (done) {
-                    console.log('video load ended ');
+                    // console.log('audio load ended ');
                     initAudioData(buffer);
                     return null;
                 }
@@ -57,7 +63,8 @@ export default class VideoInfo extends Component {
                     audioCtx = new(window.AudioContext || window.webkitAudioContext)();
 
               audioCtx.decodeAudioData(arrayBuffer, function(buffer) {
-                  that.setState({ buffer : buffer });
+                  console.log('loading auidobuffer completed!')
+                  that.setState({ audioBuffer : buffer });
                 },
                 function (e) {
                   "Error with decoding audio data" + e.error
@@ -106,7 +113,11 @@ export default class VideoInfo extends Component {
     }
 
     handleOnChangeFile(e) {
-      this.handleChange('file', event.target.files[0].name);
+      let fullName = event.target.files[0].name;
+      let idx = fullName.lastIndexOf('.');
+
+      this.handleChange('file', fullName.substring(0, idx));
+      this.loadAudio();
     }
   
     // called from bottom
@@ -141,9 +152,8 @@ export default class VideoInfo extends Component {
             </select>
           </span>
           <span className="MarginRight">
-            vfile : '{this.state.videoInfo.file}'
-            <input type="file" 
-                accept="audio/*"
+            file : '{this.state.videoInfo.file}'
+            <input type="file"
                 onChange={this.handleOnChangeFile}
             ></input>
           </span>
@@ -157,7 +167,8 @@ export default class VideoInfo extends Component {
                   updateSceneCut={this.updateSceneCut}
                   insert={this.handleClickInsert}
                   link={this.state.videoInfo._id}
-                  buffer={this.state.buffer}
+                  buffer={this.state.audioBuffer}
+                  videoInfo={this.state.videoInfo}
                 />)
             }
           </div>

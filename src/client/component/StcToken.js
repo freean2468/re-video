@@ -15,8 +15,6 @@ export default class StcToken extends Component {
         lt : ''
       };
 
-      this.videoRef = React.createRef();
-
       this.handleChange = this.handleChange.bind(this);
       this.handleClickTokenize = this.handleClickTokenize.bind(this);
       this.handleClickDelStd = this.handleClickDelStd.bind(this);
@@ -32,6 +30,7 @@ export default class StcToken extends Component {
       this.delStrt = this.delStrt.bind(this);
       this.addWd = this.addWd.bind(this);
       this.delWd = this.delWd.bind(this);
+      this.updateWdTokenIb = this.updateWdTokenIb.bind(this);
 
       this.updateWdToken = this.updateWdToken.bind(this);
       this.updateWdTokenSt = this.updateWdTokenSt.bind(this);
@@ -45,6 +44,8 @@ export default class StcToken extends Component {
   
       // computed property
       item[key] = value;
+
+      // console.log(item[key]);
   
       this.updateStcToken(item, idx)
     }
@@ -108,7 +109,47 @@ export default class StcToken extends Component {
       let item = this.props.stc.wd;
       item[idx].st = st
 
-      this.handleChange('wd', item);
+      this.updateWdTokenIb(item, idx, st);
+      // this.handleChange('wd', item);
+    }
+
+    updateWdTokenIb(item, idx, st) {
+      if (this.props.videoInfo.file !== undefined) {
+        const that = this;
+        fetch(`/api/getVideo?source=${this.props.videoInfo.source}
+              &name=${encodeURIComponent(this.props.videoInfo.file)}&st=${st}`)
+          .then(res => res.blob())
+          .then(res => {
+            // console.log(res);
+            let arrayBuffer = null;
+            const fileReader = new FileReader();
+
+            fileReader.onload = function(event) {
+              arrayBuffer = event.target.result;
+              console.log(arrayBuffer);
+
+              function toBuffer(ab) {
+                var buf = Buffer.alloc(ab.byteLength);
+                var view = new Uint8Array(ab);
+                for (var i = 0; i < buf.length; ++i) {
+                    buf[i] = view[i];
+                }
+                return buf;
+              }
+
+              let buffer = toBuffer(arrayBuffer);
+
+              console.log(buffer);
+
+              item[idx].ib = '';
+              item[idx].ib = buffer;
+              that.handleChange('wd', item);
+
+              console.log(new Blob([arrayBuffer], {type:"image/jpeg"}));
+            };
+            fileReader.readAsArrayBuffer(res);
+          });
+      }
     }
   
     addWd(wd){
@@ -191,6 +232,9 @@ export default class StcToken extends Component {
                 insert={this.insert}
                 updateWdToken={this.updateWdToken}
                 delWd={this.delWd}
+                updateWdTokenIb={this.updateWdTokenIb}
+                videoInfo={this.props.videoInfo}
+                buffer={this.props.buffer}
               />)
           }
           {this.props.stc['strt'] &&

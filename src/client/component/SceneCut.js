@@ -97,6 +97,7 @@ export default class SceneCut extends Component {
             st={this.props.cut.st}
             et={this.props.cut.et}
             buffer={this.props.buffer}
+            videoInfo={this.props.videoInfo}
           />
           <div>
             {lt} : 

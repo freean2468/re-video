@@ -13,6 +13,7 @@ export default class WdToken extends Component {
       };
 
       this.handleChange = this.handleChange.bind(this);
+      this.handleChangeSt = this.handleChangeSt.bind(this);
       this.loadLtList = this.loadLtList.bind(this);
       this.handleClickDelWd = this.handleClickDelWd.bind(this);
       this.handleClickToggler = this.handleClickToggler.bind(this);
@@ -32,6 +33,11 @@ export default class WdToken extends Component {
       // register up to the parent states
       this.updateWdToken(this.props.wd, this.props.idx);
     }
+
+    handleChangeSt(value) {
+      this.loadImage(value);
+      this.handleChange('st', value);
+    }
   
     handleChange(key, value){  
       let idx = this.props.idx,
@@ -39,7 +45,7 @@ export default class WdToken extends Component {
   
       // computed property
       if (item[key] === undefined){
-        console.log(`Adding new (key,value) : (${key},${value})`);
+        // console.log(`Adding new (key,value) : (${key},${value})`);
         item[key] = '';
       }
       item[key] = value;
@@ -96,9 +102,33 @@ export default class WdToken extends Component {
       } else {
         tempDp = this.props.wd[dp];
       }
+
+      let src = null;
+      if (this.props.wd.ib !== undefined) {
+        function toArrayBuffer(buf) {
+          var ab = new ArrayBuffer(buf.length);
+          var view = new Uint8Array(ab);
+          for (var i = 0; i < buf.length; ++i) {
+              view[i] = buf[i];
+          }
+          return ab;
+        }
+        let data = this.props.wd.ib.data;
+        if (data === undefined) {
+          data = this.props.wd.ib;
+        }
+        
+        let arrayBuffer = toArrayBuffer(data);
+        src = new Blob([arrayBuffer], {type:"image/jpeg"});
+      }
       
       return (
         <div className="WdToken">
+          {src !== null &&
+            <>
+            <img src={window.URL.createObjectURL(src)} type="image/jpeg" width="40px"/>
+            </>
+          }
           <button
             onClick={this.handleClickDelWd}
           >Del Wd</button>
@@ -107,7 +137,7 @@ export default class WdToken extends Component {
           <input
             className="St"
             value={this.props.wd.st}
-            onChange={(e) => this.handleChange('st', e.target.value)}
+            onChange={(e) => this.handleChangeSt(e.target.value)}
           />
           {dp}:
           <input

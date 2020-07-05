@@ -9,11 +9,17 @@ const path = require('path');
 
 // third-party
 const {MongoClient} = require('mongodb');
+
 const natural = require('natural')
 const wdTokenizer = new natural.WordTokenizer();
 const stcTokenizer = new natural.SentenceTokenizer();
 
-app.use(express.json())
+var ffmpeg = require('fluent-ffmpeg');
+// ffmpeg.setFfmpegPath('/Users/hoon-ilsong/Downloads/ffprobe');
+// ffmpeg.setFfprobePath('/Users/hoon-ilsong/Downloads/ffmpeg');
+
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({limit: '50mb'}));
 
 const DATABASE_NAME = "sensebe_dictionary"
 const VIDEO_ARCHIVE_PATH = "collections/SB_VIDEO"
@@ -29,10 +35,61 @@ const LIST_OF_SOURCE = "list_source.json"
 const PASSWORD = fs.readFileSync("./pw.txt", "utf8")
 
 function getVideo(req, res) {
-    console.log(req.query);
+    const name = req.query.name.trim(), source = req.query.source.trim(), st = req.query.st;
+    const mov = '.mov';
+    let videoPath = '/Users/hoon-ilsong/Movies/ForYoutube/', imagePath = '';
+    let videoFile = '', imageFile = '';
+
+    if (st === '') {
+        console.log('no st!');
+        return res.send('no st');
+    }
+
+    switch(source) {
+        case '0': // witcher3
+            videoPath += 'Witcher3/';
+            break;
+        default:
+            console.log("Source Error!!! : ",source);
+            break;
+    }
+
+    imagePath = videoPath + 'ffmpeg';
+
+    videoFile = videoPath + name + mov;
+    imageFile = name + `_${st}.jpeg`;
+
+    ffmpeg(videoFile)
+        .on('end', function () {
+            fs.readFile(imagePath+'/'+imageFile, function(err, data) {
+                if (err) {
+                    console.log(err.stack);
+                    throw err // Fail if the file can't be read.
+                }
+                res.writeHead(200, {'Content-Type': 'image/jpeg'});
+                res.end(data, 'binary') // Send the file data to the browser.
+            });
+
+        })
+        .on('error', function (err) {
+            console.log('an error happened: ' + err.message);
+            res.writeHead(404);
+            res.end(error.message);
+        })
+        .screenshots({
+            // count: 1,
+            timestamps: [parseFloat(st)],
+            filename: imageFile,
+            folder: imagePath,
+            size: '160x90'
+        });
+}
+
+function getAudio(req, res) {
     const name = req.query.name, source = req.query.source;
+    const mp3 = '.mp3';
     let path = '/Users/hoon-ilsong/Movies/ForYoutube/';
-    console.log('name : ', name);
+    let file = '';
 
     switch(source) {
         case '0': // witcher3
@@ -40,10 +97,10 @@ function getVideo(req, res) {
             break;
     }
 
-    path += name;
+    file = path + name + mp3;
 
     // create read stream
-    const readStream = fs.createReadStream(path);
+    const readStream = fs.createReadStream(file);
     
     // This will wait until we know the readable stream is actually valid before piping
     readStream.on('open', function () {
@@ -416,6 +473,7 @@ async function insert(req, res) {
                     let wd = stc[j]['wd'], strt = stc[j]['strt'];
 
                     if (wd) {
+
                         async function insertBase(listing, hasiId) {
                             let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({_id:hasiId});
 
@@ -499,6 +557,8 @@ async function insert(req, res) {
                                         source:query.source,
                                         stc:stc[j].ct,
                                         link: _id,
+                                        st:data.st,
+                                        date:new Date().toLocaleString(),
                                         pos: {
                                             c:i,
                                             stc:j,
@@ -510,6 +570,7 @@ async function insert(req, res) {
                             };
                             await insertBase(ctListing, ct.hashCode());
 
+                            // then rt
                             if (ct !== rt) {
                                 const rtListing = { 
                                     _id: rt.hashCode(), 
@@ -520,6 +581,8 @@ async function insert(req, res) {
                                             source:query.source,
                                             stc:stc[j].ct,
                                             link: _id,
+                                            st:data.st,
+                                            date:new Date().toLocaleString(),
                                             pos: {
                                                 c:i,
                                                 stc:j,
@@ -539,6 +602,7 @@ async function insert(req, res) {
                     }
 
                     if (strt) {
+
                         async function insertStrt(strt, id) {
                             const result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
                                 { _id: id },
@@ -560,6 +624,8 @@ async function insert(req, res) {
                                             source:query.source,
                                             stc:stc[j].ct,
                                             link: _id,
+                                            st:wd[strt[k].from].st,
+                                            date:new Date().toLocaleString(),
                                             pos: {
                                                 c:i,
                                                 stc:j,
@@ -666,6 +732,7 @@ app.get('/api/parseStc', (req, res) => parseStc(req, res));
 
 // File
 app.get('/api/getVideo', (req, res) => getVideo(req, res));
+app.get('/api/getAudio', (req, res) => getAudio(req, res));
 app.get('/api/getFileList', (req, res) => getFileList(res));
 app.get('/api/getFile', (req, res) => getFile(req, res));
 app.get('/api/getSourceList', (req, res) => getSourceList(res));

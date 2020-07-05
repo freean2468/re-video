@@ -97,6 +97,7 @@ export default class TextInfo extends Component {
                   updateStcToken={this.updateStcToken}
                   delStc={this.delStc}
                   buffer={this.props.buffer}
+                  videoInfo={this.props.videoInfo}
                   st={this.props.st}
                   et={this.props.et}
                   getStcSt={this.getStcSt}

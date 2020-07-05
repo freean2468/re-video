@@ -18,6 +18,7 @@
     "@material-ui/lab": "^4.0.0-alpha.53",
     "babel-polyfill": "^6.26.0",
     "express": "^4.16.3",
+    "fluent-ffmpeg": "^2.1.2",
     "immutability-helper": "^3.0.2",
     "mongodb": "^3.5.7",
     "natural": "^2.1.5",
