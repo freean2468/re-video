@@ -34,15 +34,17 @@ const LIST_OF_SOURCE = "list_source.json"
 
 const PASSWORD = fs.readFileSync("./pw.txt", "utf8")
 
-function getVideo(req, res) {
-    const name = req.query.name.trim(), source = req.query.source.trim(), st = req.query.st;
+function getSnapshot(req, res) {
+    const name = req.query.name.trim(), source = req.query.source.trim(), t = req.query.t, 
+            size = req.query.size;
+
     const mov = '.mov';
     let videoPath = '/Users/hoon-ilsong/Movies/ForYoutube/', imagePath = '';
     let videoFile = '', imageFile = '';
 
-    if (st === '') {
-        console.log('no st!');
-        return res.send('no st');
+    if (t === '') {
+        console.log('no t!');
+        return res.send('no t');
     }
 
     switch(source) {
@@ -57,7 +59,7 @@ function getVideo(req, res) {
     imagePath = videoPath + 'ffmpeg';
 
     videoFile = videoPath + name + mov;
-    imageFile = name + `_${st}.jpeg`;
+    imageFile = name + `_${t}.jpeg`;
 
     ffmpeg(videoFile)
         .on('end', function () {
@@ -68,6 +70,14 @@ function getVideo(req, res) {
                 }
                 res.writeHead(200, {'Content-Type': 'image/jpeg'});
                 res.end(data, 'binary') // Send the file data to the browser.
+
+                fs.unlink(imagePath+'/'+imageFile, (err) => {
+                    if (err) {
+                      console.error(err)
+                      return
+                    }
+                    //file removed
+                })
             });
 
         })
@@ -78,10 +88,10 @@ function getVideo(req, res) {
         })
         .screenshots({
             // count: 1,
-            timestamps: [parseFloat(st)],
+            timestamps: [parseFloat(t)],
             filename: imageFile,
             folder: imagePath,
-            size: '160x90'
+            size: size
         });
 }
 
@@ -731,7 +741,7 @@ app.get('/api/tokenizeStc', (req, res) => tokenizeStc(req, res));
 app.get('/api/parseStc', (req, res) => parseStc(req, res));
 
 // File
-app.get('/api/getVideo', (req, res) => getVideo(req, res));
+app.get('/api/getSnapshot', (req, res) => getSnapshot(req, res));
 app.get('/api/getAudio', (req, res) => getAudio(req, res));
 app.get('/api/getFileList', (req, res) => getFileList(res));
 app.get('/api/getFile', (req, res) => getFile(req, res));

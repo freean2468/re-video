@@ -125,9 +125,7 @@ export default class WdToken extends Component {
       return (
         <div className="WdToken">
           {src !== null &&
-            <>
             <img src={window.URL.createObjectURL(src)} type="image/jpeg" width="40px"/>
-            </>
           }
           <button
             onClick={this.handleClickDelWd}

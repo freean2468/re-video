@@ -8,14 +8,11 @@ export default class TextCanvas extends Component {
         this.state = {
             x : 0,
             y : 0,
-            width : 0,
-            height : 0,
             interval : null,
             scrt:[]
         }
 
         this.container = React.createRef();
-        this.optionRef = React.createRef();
         this.canvasRef = React.createRef();
 
         this.ctx = null;
@@ -94,14 +91,10 @@ export default class TextCanvas extends Component {
         this.ctx = this.canvasRef.current.getContext("2d");
 
         this.setState({interval : setInterval(() => {
-            this.setState({
-                width:this.optionRef.current.offsetWidth,
-                height:this.optionRef.current.offsetHeight
-            })
-            this.ctx.clearRect(0,0,this.state.width,this.state.height);
+            this.ctx.clearRect(0,0,this.props.width,this.props.height);
             this.ctx.beginPath();
             this.ctx.strokeStyle = "red";
-            this.ctx.rect(this.state.width*this.state.x/100, this.state.height*this.state.y/100, 10, 10)
+            this.ctx.rect(this.props.width*this.state.x/100, this.props.height*this.state.y/100, 10, 10)
             this.ctx.stroke();
         }, 1000)});
     }
@@ -144,7 +137,7 @@ export default class TextCanvas extends Component {
         var x = e.nativeEvent.offsetX;
         var y = e.nativeEvent.offsetY;
 
-        this.ctx.clearRect(0,0,this.state.width,this.state.height);
+        this.ctx.clearRect(0,0,this.props.width,this.props.height);
 
         x = x/this.canvasRef.current.offsetWidth*100;
         y = y/this.canvasRef.current.offsetHeight*100;
@@ -168,12 +161,12 @@ export default class TextCanvas extends Component {
         return (
             <>
                 <canvas className="TextCanvas" onMouseDown={this.handleOnMouseDown} ref={this.canvasRef}
-                    width={this.state.width} height={this.state.height}/>
+                    width={this.props.width} height={this.props.height}/>
                 <div className="TextDisplay" ref={this.displayRef} 
                     style={{
-                        // width:`${this.state.width}px`,
-                        // height:`${this.state.height}px`,
-                        fontSize:`${fs*this.state.width/1920*0.5625}px`,
+                        width:`${this.props.width}px`,
+                        height:`${this.props.height}px`,
+                        fontSize:`${fs*this.props.width/1920*0.5625}px`,
                         fontFamily:`${ff}`,
                         paddingLeft:`${pl}%`,
                         paddingRight:`${pr}%`,
@@ -181,7 +174,7 @@ export default class TextCanvas extends Component {
                     }}>
                     {this.state.scrt.map((token)=>token)}
                 </div>
-                <span className="CanvasOptions" ref={this.optionRef}>
+                <span className="CanvasOptions">
                     (x: {this.state.x}%, y: {this.state.y}%)
                     <br></br>
                     pt: <input value={pt}

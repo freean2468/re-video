@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import YPlayer from './YPlayer';
 import './videosynchronizer.css';
 
 export default class VideoSynchronizer extends Component {

@@ -110,14 +110,13 @@ export default class StcToken extends Component {
       item[idx].st = st
 
       this.updateWdTokenIb(item, idx, st);
-      // this.handleChange('wd', item);
     }
 
     updateWdTokenIb(item, idx, st) {
       if (this.props.videoInfo.file !== undefined) {
         const that = this;
-        fetch(`/api/getVideo?source=${this.props.videoInfo.source}
-              &name=${encodeURIComponent(this.props.videoInfo.file)}&st=${st}`)
+        fetch(`/api/getSnapshot?source=${this.props.videoInfo.source}
+              &name=${encodeURIComponent(this.props.videoInfo.file)}&t=${st}&size=160x90`)
           .then(res => res.blob())
           .then(res => {
             // console.log(res);
@@ -126,7 +125,7 @@ export default class StcToken extends Component {
 
             fileReader.onload = function(event) {
               arrayBuffer = event.target.result;
-              console.log(arrayBuffer);
+              // console.log(arrayBuffer);
 
               function toBuffer(ab) {
                 var buf = Buffer.alloc(ab.byteLength);
@@ -139,13 +138,13 @@ export default class StcToken extends Component {
 
               let buffer = toBuffer(arrayBuffer);
 
-              console.log(buffer);
+              // console.log(buffer);
 
               item[idx].ib = '';
               item[idx].ib = buffer;
               that.handleChange('wd', item);
 
-              console.log(new Blob([arrayBuffer], {type:"image/jpeg"}));
+              // console.log(new Blob([arrayBuffer], {type:"image/jpeg"}));
             };
             fileReader.readAsArrayBuffer(res);
           });
