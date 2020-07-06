@@ -35,7 +35,7 @@ const LIST_OF_SOURCE = "list_source.json"
 const PASSWORD = fs.readFileSync("./pw.txt", "utf8")
 
 function getSnapshot(req, res) {
-    const name = req.query.name.trim(), source = req.query.source.trim(), t = req.query.t, 
+    const name = req.query.name.trim(), source = req.query.source.trim(), t = req.query.t.trim(), 
             size = req.query.size;
 
     const mov = '.mov';
@@ -60,6 +60,8 @@ function getSnapshot(req, res) {
 
     videoFile = videoPath + name + mov;
     imageFile = name + `_${t}.jpeg`;
+
+    console.log(imageFile);
 
     ffmpeg(videoFile)
         .on('end', function () {
