@@ -12,14 +12,12 @@ export default class App extends Component {
     }
 
     this.loadVideo = this.loadVideo.bind(this);
-    this.videoInfoRef = React.createRef();
   }
 
   loadVideo(name, json) {
-    let item = json
-    item['_id'] = name
-    this.setState({videoInfo:item});
-    this.videoInfoRef.current.updateVideoInfo(item);
+    let item = json;
+    item['_id'] = name;
+    this.setState({ videoInfo:item });
   }
 
   componentDidMount() {
@@ -31,9 +29,7 @@ export default class App extends Component {
       <div className="Wrapper">
         <Nav loadVideo={this.loadVideo}/>
         {this.state.videoInfo !== null && 
-          <Main 
-            ref={this.videoInfoRef} 
-            videoInfo={this.state.videoInfo}/>
+          <Main videoInfo={this.state.videoInfo}/>
         }
       </div>
     );

@@ -21,8 +21,6 @@ export default class TextCanvas extends Component {
         this.handleClickLoad = this.handleClickLoad.bind(this);
         this.handleOnMouseDown = this.handleOnMouseDown.bind(this);
         this.updateCanvasInfo = props.updateCanvasInfo.bind(this);
-
-        this.initiateDisplay();
     }
 
     initiateDisplay() {
@@ -88,6 +86,8 @@ export default class TextCanvas extends Component {
     }
 
     componentDidMount() {
+        this.initiateDisplay();
+        
         this.ctx = this.canvasRef.current.getContext("2d");
 
         this.setState({interval : setInterval(() => {

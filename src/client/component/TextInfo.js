@@ -62,9 +62,13 @@ export default class TextInfo extends Component {
     getStcSt(idx) {
       let st = 0;
       if (idx === 0) {
-        st = this.props.t.stc[0].wd[0].st;
+        if (this.props.t.stc[0].wd !== undefined) {
+          st = this.props.t.stc[0].wd[0].st;
+        }
       } else {
-        st = this.props.t.stc[idx-1].wd[this.props.t.stc[idx-1].wd.length-1].st;
+        if (this.props.t.stc[idx-1].wd !== undefined) {
+          st = this.props.t.stc[idx-1].wd[this.props.t.stc[idx-1].wd.length-1].st;
+        }
       }
       return st;
     }
@@ -82,11 +86,11 @@ export default class TextInfo extends Component {
             value={this.props.t['scrt']}
             onChange={(e) => this.handleChange('scrt', e.target.value)}
           />
-          <div className="Stc">
-            stc :
-            <br></br>
-            {this.props.t['stc'] &&
-              this.props.t['stc'].map((stc, idx)=>
+          {this.props.t['stc'] &&
+            <div className="Stc">
+              stc :
+              <br></br>
+              {this.props.t['stc'].map((stc, idx)=>
                 <StcToken 
                   key={idx}
                   stc={stc}
@@ -101,9 +105,10 @@ export default class TextInfo extends Component {
                   st={this.props.st}
                   et={this.props.et}
                   getStcSt={this.getStcSt}
-                />)
-            }
-          </div>
+                />
+              )}
+            </div>
+          }
         </div>
       );
     }

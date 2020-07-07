@@ -30,7 +30,9 @@ class ListItem extends Component {
     e.preventDefault();
     fetch('/api/getFile?name='+this.props.name)
       .then(res => res.json())
-      .then(file => this.props.loadVideo(this.props.name, file))
+      .then(file => {
+        this.props.loadVideo(this.props.name, file)
+      })
   }
 
   render() {

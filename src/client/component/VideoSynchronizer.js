@@ -1,5 +1,34 @@
-import React, { Component } from 'react';
+import React, { Component, useState, useEffect } from 'react';
 import './videosynchronizer.css';
+
+const Timer = (draw) => {
+  const [seconds, setSeconds] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+
+  function toggle() {
+    setIsActive(!isActive);
+  }
+
+  function reset() {
+    setSeconds(0);
+    setIsActive(false);
+  }
+
+  useEffect(() => {
+    let interval = null;
+    if (isActive) {
+      interval = setInterval(() => {
+        draw();
+        setSeconds(seconds => seconds + 0.1);
+      }, 100);
+    } else if (!isActive && seconds !== 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isActive, seconds]);
+
+  return null;
+};
 
 export default class VideoSynchronizer extends Component {
     constructor(props) {
@@ -14,7 +43,7 @@ export default class VideoSynchronizer extends Component {
 
             selectedIdx : null,
 
-            maxEt : null
+            maxEt : null,
         }
   
         this.cvRef = React.createRef();
@@ -35,14 +64,11 @@ export default class VideoSynchronizer extends Component {
 
         this.updateWdTokenSt = props.updateWdTokenSt.bind(this);
     }
-  
-    componentDidMount() {
-        this.drawSineWave();
-    }
 
     handleOnMouseMove(e) {
         this.setState({x:e.clientX - this.cvRef.current.offsetLeft});
         this.playAudio(e, 0.05);
+        this.drawSineWave();
     }
 
     handleOnClick(e) {
@@ -56,6 +82,7 @@ export default class VideoSynchronizer extends Component {
         }
 
         this.playAudio(e, 1);
+        this.drawSineWave();
     }
 
     handleOnClickWd(e, idx) {
@@ -68,6 +95,7 @@ export default class VideoSynchronizer extends Component {
 
     handleOnChangeSyncPanel(e) {
         this.setState({maxEt:e.target.value});
+        this.drawSineWave();
     }
 
     getStcSt() {
@@ -129,12 +157,13 @@ export default class VideoSynchronizer extends Component {
         const timer = setTimeout(()=>{
             that.setState({audioCtx : null, clickX : x, isPlaying : false, time:null});
             audioCtx.close();
+            Timer.reset();
         }, wantedDuration*1000);
+
+        Timer(this.drawSineWave);
     }
   
     drawSineWave() {
-        requestAnimationFrame(this.drawSineWave);
-
         if (this.props.buffer !== null) {
             const sinewaveСanvasCtx = this.cvRef.current.getContext("2d"),
                 width = this.cvRef.current.offsetWidth, height = this.cvRef.current.offsetHeight, 

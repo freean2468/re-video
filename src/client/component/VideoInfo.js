@@ -10,7 +10,6 @@ export default class VideoInfo extends Component {
       super(props)
       this.state = {
         isDisabled : true,
-        videoInfo : props.videoInfo,
         sourceList : [],
         audioBuffer : null
       };
@@ -22,18 +21,35 @@ export default class VideoInfo extends Component {
       this.updateSceneCut = this.updateSceneCut.bind(this);
       this.handleClickToggler = this.handleClickToggler.bind(this);
       this.handleOnChangeFile = this.handleOnChangeFile.bind(this);
+    }
 
+    componentDidMount() {
       fetch('/api/getSourceList')
-        .then(res => res.json())
-        .then(res => this.setState({sourceList:res.source}));
+      .then(res => res.json())
+      .then(res => this.setState({sourceList:res.source}));
 
       this.loadAudio();
     }
 
+    componentDidUpdate(prevProps) {
+      console.log('videoInfo did update');
+      if (this.props.videoInfo.file !== prevProps.videoInfo.file) {
+        if (this.props.videoInfo.file !== undefined || this.props.videoInfo.file !== '') {
+          fetch('/api/getSourceList')
+          .then(res => res.json())
+          .then(res => this.setState({sourceList:res.source}));
+    
+          this.loadAudio();
+        } else {
+          this.setState({ audioBuffer:null });
+        }
+      }
+    }
+
     loadAudio() {
-      if (this.state.videoInfo.file !== undefined) {
+      if (this.props.videoInfo.file !== undefined && this.props.videoInfo.file !== '') {
         const that = this;
-        fetch(`/api/getAudio?source=${this.state.videoInfo.source}&name=${encodeURIComponent(this.state.videoInfo.file)}`)
+        fetch(`/api/getAudio?source=${this.props.videoInfo.source}&name=${encodeURIComponent(this.props.videoInfo.file)}`)
           .then(res => {
             const reader = res.body.getReader();
             let buffer = new Uint8Array(0);
@@ -76,14 +92,9 @@ export default class VideoInfo extends Component {
           });
       }
     }
-
-    // refed
-    updateVideoInfo(info) {
-      this.setState({videoInfo : info});
-    }
   
     handleChange(key, value) {
-      let item = this.state.videoInfo
+      let item = this.props.videoInfo
       item[key] = value
       this.setState({videoInfo : item})
     }
@@ -91,7 +102,7 @@ export default class VideoInfo extends Component {
     handleClickInsert() {
       fetch('/api/insert', {
           method: 'POST',
-          body: JSON.stringify(this.state.videoInfo),
+          body: JSON.stringify(this.props.videoInfo),
           headers: {"Content-Type": "application/json"}
         })
         .then(res => res.json())
@@ -104,7 +115,7 @@ export default class VideoInfo extends Component {
       this.setState({isDisabled:!this.state.isDisabled});
 
       if (isDisabled) {
-        fetch(`/api/deleteVideo?id=${this.state.videoInfo._id}`)
+        fetch(`/api/deleteVideo?id=${this.props.videoInfo._id}`)
           .then(res => res.json())
           .then(res => console.log('[deleteVideo_RES] : ', res))
       } else {
@@ -123,7 +134,7 @@ export default class VideoInfo extends Component {
     // called from bottom
     updateSceneCut(cut, idx) {
       //  shallow copy
-      let item = this.state.videoInfo['c'];
+      let item = this.props.videoInfo['c'];
       item[idx] = cut;
       this.handleChange('c', item)
     }
@@ -135,7 +146,7 @@ export default class VideoInfo extends Component {
             _id (link) :
             <input
               type="text"
-              value={this.state.videoInfo['_id']}
+              value={this.props.videoInfo['_id']}
               onChange={(e) => this.handleChange('_id', e.target.value)}
               disabled={(this.state.isDisabled)? "disabled" : ""}
             />
@@ -146,29 +157,29 @@ export default class VideoInfo extends Component {
           </span>
           <span className="MarginRight">
             source :
-            <select value={this.state.videoInfo['source']} onChange={(e) => this.handleChange('source', e.target.value)}>
+            <select value={this.props.videoInfo['source']} onChange={(e) => this.handleChange('source', e.target.value)}>
               {this.state.sourceList !== [] &&
                 this.state.sourceList.map((item, idx) => <option key={idx} value={idx}>{item}</option>)}
             </select>
           </span>
           <span className="MarginRight">
-            file : '{this.state.videoInfo.file}'
+            file : '{this.props.videoInfo.file}'
             <input type="file"
                 onChange={this.handleOnChangeFile}
             ></input>
           </span>
           <div>
-            {this.state.videoInfo['c'] &&
-              this.state.videoInfo['c'].map((cut, idx) => 
-                <SceneCut 
+            {this.props.videoInfo['c'] &&
+              this.props.videoInfo['c'].map((cut, idx) => 
+                <SceneCut
                   key={idx} 
                   cut={cut}
                   idx={idx}
                   updateSceneCut={this.updateSceneCut}
                   insert={this.handleClickInsert}
-                  link={this.state.videoInfo._id}
+                  link={this.props.videoInfo._id}
                   buffer={this.state.audioBuffer}
-                  videoInfo={this.state.videoInfo}
+                  videoInfo={this.props.videoInfo}
                 />)
             }
           </div>
@@ -179,7 +190,7 @@ export default class VideoInfo extends Component {
           </div>
           <div>
             <div className="DisplayVideoInfo">
-                <pre>{JSON.stringify(this.state.videoInfo, null, 2) }</pre>
+                <pre>{JSON.stringify(this.props.videoInfo, null, 2) }</pre>
             </div>
           </div>
         </div>

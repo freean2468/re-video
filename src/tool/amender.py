@@ -8,16 +8,11 @@ import enum
 import json
 from collections import OrderedDict
 import sys
-import pymongo
 
-client = pymongo.MongoClient(
-   "mongodb+srv://<username>:<password>@<cluster-url>/test?retryWrites=true&w=majority")
-db = client.test
-
-targetPath= os.getcwd() + "/dictionary_archive"
-savePath= os.getcwd() + "/dictionary_archive_copy"
+targetPath= os.getcwd() + "/../../collections/SB_VIDEO"
+savePath= os.getcwd() + "/../../collections/SB_VIDEO_COPY"
 target = 'json'
-exception = []
+exception = ['1YafTzdBGV0']
 
 def checkException(target):
     for excep in exception:
@@ -36,6 +31,7 @@ def amend(path):
             with io.open(onTarget,"r", encoding="utf-8") as openFile:
                 # print(onTarget)
                 contents = json.load(openFile)
+                # print(contents)
 
                 '''
                 for data in contents["data"]:
@@ -58,32 +54,22 @@ def amend(path):
                 
                 newContents = OrderedDict()
 
-                newContents["root"] = contents["root"]
-                newContents["redirection"] = contents["redirection"]
-                newContents["from"] = []
-                for elm in newContents["from"]:
-                    newContents["from"].append(elm)
+                newContents["source"] = "0"
+                newContents["c"] = []
+                newContents["file"] = ""
 
-                newContents["data"] = []
+                for idx, val in enumerate(contents["text"]):
+                    c = {}
+                    c["st"] = contents["start_timestamp"][idx]
+                    c["et"] = contents["end_timestamp"][idx]
+                    c["t"] = {}
+                    c["t"]["scrt"] = contents["text"][idx]
+                    # c["t"]["stc"] = []
+                    c["lt"] = contents["literal"][idx]
+                    c["pp"] = contents["pharaphrase"][idx]
+                    # c["cv"] = {}
 
-                for data in contents["data"]:
-                    _temp = OrderedDict()
-
-                    _temp["_usage"] = data["_usage"]
-
-                    # print(contents["root"])
-                    _temp["_speech"] = []
-                    for elm in data["_speech"]:
-                        _temp["_speech"].append(elm)
-
-                    _temp["_video"] = data["_video"]
-                    _temp["_chunks"] = []
-                    for elm in data["_chunks"]:
-                        _temp["_chunks"].append(elm)
-
-                    _temp["_text"] = []
-
-                    newContents["data"].append(_temp)
+                    newContents["c"].append(c)
 
                 # print(newContents)
                 

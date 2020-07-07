@@ -1,7 +1,123 @@
-import React, { Component } from 'react';
+import React, { Component, PureComponent } from 'react';
 import TextInfo from './TextInfo';
 import './textcanvas.css';
 import TextCanvas from './TextCanvas'
+
+function toArrayBuffer(buf) {
+  var ab = new ArrayBuffer(buf.length);
+  var view = new Uint8Array(ab);
+  for (var i = 0; i < buf.length; ++i) {
+      view[i] = buf[i];
+  }
+  return ab;
+}
+
+class SnapshotImg extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      prevT : props.t,
+      buffer : null,
+      prevFile : props.videoInfo.file
+    }
+  }
+
+  componentDidMount() {
+    if (this.state.prevFile !== undefined && this.state.prevFile !== '' && this.state.prevT >= 0) {
+      const that = this;
+      fetch(`/api/getSnapshot?source=${this.props.videoInfo.source}
+            &name=${encodeURIComponent(this.props.videoInfo.file)}&t=${this.props.t}
+            &size=${this.props.width}x${this.props.height}`)
+        .then(res => res.blob())
+        .then(res => {
+          // console.log(res);
+          let arrayBuffer = null;
+          const fileReader = new FileReader();
+
+          fileReader.onload = function(event) {
+            arrayBuffer = event.target.result;
+            // console.log(arrayBuffer);
+
+            function toBuffer(ab) {
+              var buf = Buffer.alloc(ab.byteLength);
+              var view = new Uint8Array(ab);
+              for (var i = 0; i < buf.length; ++i) {
+                  buf[i] = view[i];
+              }
+              return buf;
+            }
+
+            let buffer = toBuffer(arrayBuffer);
+
+            that.setState({buffer : buffer});
+          };
+          fileReader.readAsArrayBuffer(res);
+        });
+    }
+  }
+
+  static getDerivedStateFromProps(props, state) {
+    if (props.videoInfo.file != state.prevFile || props.t !== state.prevT) {
+      console.log('hi')
+      if (props.file !== undefined && props.file !== '' && props.t >= 0) {
+        console.log('hi2')
+        fetch(`/api/getSnapshot?source=${props.videoInfo.source}
+              &name=${encodeURIComponent(props.videoInfo.file)}&t=${t}
+              &size=${props.width}x${props.height}`)
+          .then(res => res.blob())
+          .then(res => {
+            // console.log(res);
+            let arrayBuffer = null;
+            const fileReader = new FileReader();
+
+            fileReader.onload = function(event) {
+              arrayBuffer = event.target.result;
+              // console.log(arrayBuffer);
+
+              function toBuffer(ab) {
+                var buf = Buffer.alloc(ab.byteLength);
+                var view = new Uint8Array(ab);
+                for (var i = 0; i < buf.length; ++i) {
+                    buf[i] = view[i];
+                }
+                return buf;
+              }
+
+              let buffer = toBuffer(arrayBuffer);
+
+              return {
+                prevT : props.t,
+                buffer : buffer,
+                prevFile : props.videoInfo.file
+              };
+            };
+            fileReader.readAsArrayBuffer(res);
+          });
+      } else {
+        return {
+          prevT : props.t,
+          buffer : null,
+          prevFile : props.videoInfo.file
+        };
+      }
+    }
+    return null;
+  }
+
+  render() {
+    let src = null;
+
+    if (this.state.buffer !== null) {
+      let arrayBuffer = toArrayBuffer(this.state.buffer);
+      src = new Blob([arrayBuffer], {type:"image/jpeg"});
+    }
+
+    return (
+      src &&
+      <img src={window.URL.createObjectURL(src)} type="image/jpeg"/>
+    );
+  }
+}
 
 export default class SceneCut extends Component {
     /*
@@ -11,27 +127,21 @@ export default class SceneCut extends Component {
       super(props);
 
       this.state = {
-        stSnapshot : null,
-        etSnapshot : null,
-        imgWidth : 768,
-        imgHeight : null
+        width : 768,
+        height : null
       }
 
-      this.state.imgHeight = 768*9/16;
+      this.state.height = this.state.width*9/16;
 
       this.handleChangeSt = this.handleChangeSt.bind(this);
       this.handleChangeEt = this.handleChangeEt.bind(this);
       this.handleChange = this.handleChange.bind(this);
 
-      this.getSnapshot = this.getSnapshot.bind(this);
       this.updateTextInfo = this.updateTextInfo.bind(this);
       this.updateCanvasInfo = this.updateCanvasInfo.bind(this);
   
       this.insert = props.insert.bind(this);
       this.updateSceneCut = props.updateSceneCut.bind(this);
-
-      this.getSnapshot('st', props.cut.st);
-      this.getSnapshot('et', props.cut.et)
     }
 
     handleChangeSt(value){
@@ -55,44 +165,6 @@ export default class SceneCut extends Component {
   
       this.updateSceneCut(item, this.props.idx)
     }
-
-    getSnapshot(which, t) {
-      if (t !== undefined) {
-        const that = this;
-        fetch(`/api/getSnapshot?source=${this.props.videoInfo.source}
-              &name=${encodeURIComponent(this.props.videoInfo.file)}&t=${t}
-              &size=${this.state.imgWidth}x${this.state.imgHeight}`)
-          .then(res => res.blob())
-          .then(res => {
-            // console.log(res);
-            let arrayBuffer = null;
-            const fileReader = new FileReader();
-
-            fileReader.onload = function(event) {
-              arrayBuffer = event.target.result;
-              // console.log(arrayBuffer);
-
-              function toBuffer(ab) {
-                var buf = Buffer.alloc(ab.byteLength);
-                var view = new Uint8Array(ab);
-                for (var i = 0; i < buf.length; ++i) {
-                    buf[i] = view[i];
-                }
-                return buf;
-              }
-
-              let buffer = toBuffer(arrayBuffer);
-
-              if (which === 'st') {
-                that.setState({stSnapshot:buffer});
-              } else {
-                that.setState({etSnapshot:buffer});
-              }
-            };
-            fileReader.readAsArrayBuffer(res);
-          });
-      }
-    }
   
     /**********
     // called by bottom
@@ -115,31 +187,6 @@ export default class SceneCut extends Component {
     render() {
       let st = 'st', et = 'et', lt = 'lt', pp = 'pp'
 
-      function toArrayBuffer(buf) {
-        var ab = new ArrayBuffer(buf.length);
-        var view = new Uint8Array(ab);
-        for (var i = 0; i < buf.length; ++i) {
-            view[i] = buf[i];
-        }
-        return ab;
-      }
-
-      let stSrc = null;
-      if (this.state.stSnapshot !== null) {
-        let data = this.state.stSnapshot;
-        
-        let arrayBuffer = toArrayBuffer(data);
-        stSrc = new Blob([arrayBuffer], {type:"image/jpeg"});
-      }
-
-      let etSrc = null;
-      if (this.state.etSnapshot !== null) {
-        let data = this.state.etSnapshot;
-        
-        let arrayBuffer = toArrayBuffer(data);
-        etSrc = new Blob([arrayBuffer], {type:"image/jpeg"});
-      }
-
       return (
         <div className="SceneCut">
           <div>
@@ -150,20 +197,21 @@ export default class SceneCut extends Component {
               onChange={(e) => this.handleChangeSt(e.target.value)}
             />
           </div>
-          {stSrc !== null &&
-            <div className="TextCanvasContainer">
-              <img src={window.URL.createObjectURL(stSrc)} type="image/jpeg">
-              </img>
+          <div className="TextCanvasContainer">
+            <SnapshotImg t={this.props.cut.st} videoInfo={this.props.videoInfo}
+                        width={this.state.width} height={this.state.height}
+            />
+            {this.props.cut.cv &&
               <TextCanvas cv={this.props.cut['cv']} 
                 t={this.props.cut.t}
                 idx={this.props.idx}
                 source={this.props.source}
                 updateCanvasInfo={this.updateCanvasInfo}
-                width={this.state.imgWidth}
-                height={this.state.imgHeight}
+                width={this.state.width}
+                height={this.state.height}
               />
-            </div>
-          }
+            }
+          </div>
           <div>
             {et} : 
             <input
@@ -172,9 +220,9 @@ export default class SceneCut extends Component {
               onChange={(e) => this.handleChangeEt(e.target.value)}
             />
           </div>
-          {etSrc !== null &&
-            <img src={window.URL.createObjectURL(etSrc)} type="image/jpeg"/>
-          }
+          <SnapshotImg t={this.props.cut.et} videoInfo={this.props.videoInfo}
+                      width={this.state.width} height={this.state.height}
+          />
           <TextInfo 
             c={this.props.idx}
             t={this.props.cut['t']} 

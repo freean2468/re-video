@@ -15,8 +15,6 @@ const wdTokenizer = new natural.WordTokenizer();
 const stcTokenizer = new natural.SentenceTokenizer();
 
 var ffmpeg = require('fluent-ffmpeg');
-// ffmpeg.setFfmpegPath('/Users/hoon-ilsong/Downloads/ffprobe');
-// ffmpeg.setFfprobePath('/Users/hoon-ilsong/Downloads/ffmpeg');
 
 app.use(express.json({limit: '50mb'}));
 app.use(express.urlencoded({limit: '50mb'}));
@@ -32,11 +30,11 @@ const CANVAS_COLLECTION = "SB_CANVAS"
 const LIST_OF_WORD = "list_word.json"
 const LIST_OF_SOURCE = "list_source.json"
 
-const PASSWORD = fs.readFileSync("./pw.txt", "utf8")
+const PASSWORD = fs.readFileSync("./pw.txt", "utf8");
 
 function getSnapshot(req, res) {
     const name = req.query.name.trim(), source = req.query.source.trim(), t = req.query.t.trim(), 
-            size = req.query.size;
+            size = req.query.size.trim();
 
     const mov = '.mov';
     let videoPath = '/Users/hoon-ilsong/Movies/ForYoutube/', imagePath = '';
@@ -60,8 +58,6 @@ function getSnapshot(req, res) {
 
     videoFile = videoPath + name + mov;
     imageFile = name + `_${t}.jpeg`;
-
-    console.log(imageFile);
 
     ffmpeg(videoFile)
         .on('end', function () {
@@ -486,8 +482,134 @@ async function insert(req, res) {
 
                     if (wd) {
 
-                        async function insertBase(listing, hasiId) {
-                            let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({_id:hasiId});
+                        // async function insertBase(listing, hashId) {
+                        //     let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({_id:hashId});
+
+                        //     if (result === null) {
+                        //         await createListing(client, listing, ENG_BASE_COLLECTION);
+                        //     } else {
+                        //         let second = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
+                        //             _id:listing._id,
+                        //             rt:listing.rt,
+                        //             'wd_m.lt': listing.wd_m[0].lt
+                        //         });
+
+                        //         if (second === null) {
+                        //             let third = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
+                        //                 _id:listing._id,
+                        //                 rt:listing.rt,
+                        //                 'wd_m.lt': listing.wd_m[0].lt,
+                        //                 'wd_m.lk.link': listing.wd_m[0].lk[0].link,
+                        //                 'wd_m.lk.pos.c': listing.wd_m[0].lk[0].pos.c,
+                        //                 'wd_m.lk.pos.stc': listing.wd_m[0].lk[0].pos.stc,
+                        //                 'wd_m.lk.pos.wd': listing.wd_m[0].lk[0].pos.wd
+                        //             });
+
+                        //             if (third === null) {
+                        //                 const wd_m = listing.wd_m[0], lk=wd_m.lk[0];
+                        //                 if (result.wd_m.length === 0) {
+                        //                     const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
+                        //                         { _id: result._id },
+                        //                         { $push: { 'wd_m': wd_m } }
+                        //                     );
+                        //                     if (test.result.nModified !== 1) {
+                        //                         throw new Error(test.result.nModified)
+                        //                     }
+                        //                 } else {
+                        //                     let isExist = false;
+                        //                     for (let l = 0; l < result.wd_m.length; ++l) {
+                        //                         if (result.wd_m[l].lt === wd_m.lt) {
+                        //                             const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
+                        //                                 { _id: result._id, 'wd_m.lt':wd_m.lt },
+                        //                                 { $push:{ 'wd_m.$.lk': lk } }
+                        //                             );
+                        //                             if (test.result.nModified !== 1) {
+                        //                                 throw new Error(test.result.nModified)
+                        //                             }
+                        //                             isExist = true;
+                        //                             break;
+                        //                         }
+                        //                     }
+                        //                     if (!isExist) {
+                        //                         const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
+                        //                             { _id: result._id },
+                        //                             { $push: { 'wd_m': wd_m } }
+                        //                         );
+                        //                         if (test.result.nModified !== 1) {
+                        //                             throw new Error(test.result.nModified)
+                        //                         }
+                        //                     }
+                        //                 }
+                        //             }
+                        //         }
+                        //     }
+                        // }
+
+                        // for (let k = 0; k < wd.length; ++k) {
+                        //     const data = wd[k], ct = data['ct'].toLowerCase();
+                        //     let rt = undefined;
+
+                        //     if (data['rt']) {
+                        //         rt = data['rt'].toLowerCase();
+                        //     } else {
+                        //         rt = ct;
+                        //     }
+                            
+                        //     // firstly, insert ct listing into base collection
+                        //     const ctListing = { 
+                        //         _id: ct.hashCode(), 
+                        //         rt: rt,
+                        //         wd_m: [{  
+                        //             lt: data['lt'],
+                        //             lk:[{
+                        //                 source:query.source,
+                        //                 stc:stc[j].ct,
+                        //                 link: _id,
+                        //                 st:data.st,
+                        //                 date:new Date().toLocaleString(),
+                        //                 pos: {
+                        //                     c:i,
+                        //                     stc:j,
+                        //                     wd:k
+                        //                 }
+                        //             }]
+                        //         }],
+                        //         strt_m:[]
+                        //     };
+                        //     await insertBase(ctListing, ct.hashCode());
+
+                        //     // then rt
+                        //     if (ct !== rt) {
+                        //         const rtListing = { 
+                        //             _id: rt.hashCode(), 
+                        //             rt: rt,
+                        //             wd_m: [{  
+                        //                 lt: data['lt'],
+                        //                 lk:[{
+                        //                     source:query.source,
+                        //                     stc:stc[j].ct,
+                        //                     link: _id,
+                        //                     st:data.st,
+                        //                     date:new Date().toLocaleString(),
+                        //                     pos: {
+                        //                         c:i,
+                        //                         stc:j,
+                        //                         wd:k
+                        //                     }
+                        //                 }]
+                        //             }],
+                        //             strt_m:[]
+                        //         };
+                        //         await insertBase(rtListing, rt.hashCode());
+                        //     }
+                            
+                        //     if (wordList[ct] === undefined) {
+                        //         wordList[ct] = hashId;
+                        //     }
+                        // }
+
+                        async function insertBase(listing, hashId) {
+                            let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({_id:hashId});
 
                             if (result === null) {
                                 await createListing(client, listing, ENG_BASE_COLLECTION);
@@ -503,10 +625,10 @@ async function insert(req, res) {
                                         _id:listing._id,
                                         rt:listing.rt,
                                         'wd_m.lt': listing.wd_m[0].lt,
-                                        'wd_m.lk.link': listing.wd_m[0].lk[0].link,
-                                        'wd_m.lk.pos.c': listing.wd_m[0].lk[0].pos.c,
-                                        'wd_m.lk.pos.stc': listing.wd_m[0].lk[0].pos.stc,
-                                        'wd_m.lk.pos.wd': listing.wd_m[0].lk[0].pos.wd
+                                        'wd_m.lk.vid': listing.wd_m[0].lk[0].vid,
+                                        'wd_m.lk.c': listing.wd_m[0].lk[0].c,
+                                        'wd_m.lk.stc': listing.wd_m[0].lk[0].stc,
+                                        'wd_m.lk.wd': listing.wd_m[0].lk[0].wd
                                     });
 
                                     if (third === null) {
@@ -566,16 +688,11 @@ async function insert(req, res) {
                                 wd_m: [{  
                                     lt: data['lt'],
                                     lk:[{
-                                        source:query.source,
-                                        stc:stc[j].ct,
-                                        link: _id,
-                                        st:data.st,
+                                        vid:_id,
                                         date:new Date().toLocaleString(),
-                                        pos: {
-                                            c:i,
-                                            stc:j,
-                                            wd:k
-                                        }
+                                        c:i,
+                                        stc:j,
+                                        wd:k
                                     }]
                                 }],
                                 strt_m:[]
@@ -590,16 +707,11 @@ async function insert(req, res) {
                                     wd_m: [{  
                                         lt: data['lt'],
                                         lk:[{
-                                            source:query.source,
-                                            stc:stc[j].ct,
-                                            link: _id,
-                                            st:data.st,
+                                            vid:_id,
                                             date:new Date().toLocaleString(),
-                                            pos: {
-                                                c:i,
-                                                stc:j,
-                                                wd:k
-                                            }
+                                            c:i,
+                                            stc:j,
+                                            wd:k
                                         }]
                                     }],
                                     strt_m:[]
@@ -614,6 +726,60 @@ async function insert(req, res) {
                     }
 
                     if (strt) {
+
+                        // async function insertStrt(strt, id) {
+                        //     const result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
+                        //         { _id: id },
+                        //         { $push: { 'strt_m': strt } }
+                        //     );
+                        //     if (result.result.nModified !== 1) {
+                        //         throw new Error(result.result.nModified)
+                        //     }
+                        // }
+
+                        // for (let k = 0; k < strt.length; ++k) {
+                        //     for (let l = 0; l < strt[k].rt.length; ++l) {
+                        //         const rt = strt[k].rt[l],
+                        //             strt_m = {  
+                        //                 t: strt[k].t,
+                        //                 usg: strt[k].usg,
+                        //                 cmt: strt[k].cmt,
+                        //                 lk:[{
+                        //                     source:query.source,
+                        //                     stc:stc[j].ct,
+                        //                     link: _id,
+                        //                     st:wd[strt[k].from].st,
+                        //                     date:new Date().toLocaleString(),
+                        //                     pos: {
+                        //                         c:i,
+                        //                         stc:j,
+                        //                         from:strt[k].from
+                        //                     }
+                        //                 }]
+                        //             };
+
+                        //         let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne(
+                        //             { _id: rt.hashCode() }
+                        //         );
+
+                        //         if (result.strt_m.length === 0) {
+                        //             await insertStrt(strt_m, rt.hashCode());
+                        //         } else {
+                        //             result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
+                        //                 _id: rt.hashCode(),
+                        //                 'strt_m.t':strt_m.t,
+                        //                 'strt_m.usg':strt_m.usg,
+                        //                 'strt_m.lk.pos.c':strt_m.lk[0].pos.c,
+                        //                 'strt_m.lk.pos.stc':strt_m.lk[0].pos.stc,
+                        //                 'strt_m.lk.pos.from':strt_m.lk[0].pos.from
+                        //             });
+
+                        //             if (result === null) {
+                        //                 await insertStrt(strt_m, rt.hashCode());
+                        //             }
+                        //         }
+                        //     }
+                        // }
 
                         async function insertStrt(strt, id) {
                             const result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
@@ -631,18 +797,12 @@ async function insert(req, res) {
                                     strt_m = {  
                                         t: strt[k].t,
                                         usg: strt[k].usg,
-                                        cmt: strt[k].cmt,
                                         lk:[{
-                                            source:query.source,
-                                            stc:stc[j].ct,
-                                            link: _id,
-                                            st:wd[strt[k].from].st,
+                                            vid:_id,
                                             date:new Date().toLocaleString(),
-                                            pos: {
-                                                c:i,
-                                                stc:j,
-                                                from:strt[k].from
-                                            }
+                                            c:i,
+                                            stc:j,
+                                            strt:k,
                                         }]
                                     };
 
@@ -657,9 +817,10 @@ async function insert(req, res) {
                                         _id: rt.hashCode(),
                                         'strt_m.t':strt_m.t,
                                         'strt_m.usg':strt_m.usg,
-                                        'strt_m.lk.pos.c':strt_m.lk[0].pos.c,
-                                        'strt_m.lk.pos.stc':strt_m.lk[0].pos.stc,
-                                        'strt_m.lk.pos.from':strt_m.lk[0].pos.from
+                                        'strt_m.lk.vid':strt_m.lk[0].vid,
+                                        'strt_m.lk.c':strt_m.lk[0].c,
+                                        'strt_m.lk.stc':strt_m.lk[0].stc,
+                                        'strt_m.lk.strt':strt_m.lk[0].strt
                                     });
 
                                     if (result === null) {
