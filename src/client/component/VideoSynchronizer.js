@@ -1,35 +1,6 @@
 import React, { Component, useState, useEffect } from 'react';
 import './videosynchronizer.css';
 
-const Timer = (draw) => {
-  const [seconds, setSeconds] = useState(0);
-  const [isActive, setIsActive] = useState(false);
-
-  function toggle() {
-    setIsActive(!isActive);
-  }
-
-  function reset() {
-    setSeconds(0);
-    setIsActive(false);
-  }
-
-  useEffect(() => {
-    let interval = null;
-    if (isActive) {
-      interval = setInterval(() => {
-        draw();
-        setSeconds(seconds => seconds + 0.1);
-      }, 100);
-    } else if (!isActive && seconds !== 0) {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [isActive, seconds]);
-
-  return null;
-};
-
 export default class VideoSynchronizer extends Component {
     constructor(props) {
         super(props);
@@ -38,12 +9,15 @@ export default class VideoSynchronizer extends Component {
             x : 0,
             clickX : null,
             isPlaying : false,
-            time : null,
+            playingTime : null,
             audioCtx : null,
 
             selectedIdx : null,
 
             maxEt : null,
+
+            drawTimerId : null,
+            drawTime : 0,
         }
   
         this.cvRef = React.createRef();
@@ -53,6 +27,7 @@ export default class VideoSynchronizer extends Component {
         this.handleOnClickWd = this.handleOnClickWd.bind(this);
         this.handleOnChangeSyncPanel = this.handleOnChangeSyncPanel.bind(this);
 
+        this.drawForSeconds = this.drawForSeconds.bind(this);
         this.drawSineWave = this.drawSineWave.bind(this);
         this.playAudio = this.playAudio.bind(this);
 
@@ -63,6 +38,15 @@ export default class VideoSynchronizer extends Component {
         this.getStcSt = this.getStcSt.bind(this);
 
         this.updateWdTokenSt = props.updateWdTokenSt.bind(this);
+    }
+
+    componentDidUpdate(prevProps) {
+        // console.log('prevProps : (' + prevProps.buffer + ') props : (' + this.props.buffer + ')');
+        if (prevProps.buffer !== this.props.buffer) {
+            if (this.props.buffer !== null) {
+                this.drawSineWave();
+            }
+        }
     }
 
     handleOnMouseMove(e) {
@@ -82,7 +66,12 @@ export default class VideoSynchronizer extends Component {
         }
 
         this.playAudio(e, 1);
-        this.drawSineWave();
+        
+        if (this.state.drawTimerId !== null) {
+            clearTimeout(this.state.drawTimerId);
+            this.setState({drawTime:0});
+        }
+        this.drawForSeconds(1);
     }
 
     handleOnClickWd(e, idx) {
@@ -149,18 +138,33 @@ export default class VideoSynchronizer extends Component {
             audioCtx : audioCtx,
             clickX : x, 
             isPlaying:true,
-            time:audioCtx.currentTime
+            playingTime:audioCtx.currentTime
         });
 
         const that = this;
 
         const timer = setTimeout(()=>{
-            that.setState({audioCtx : null, clickX : x, isPlaying : false, time:null});
+            that.setState({audioCtx : null, clickX : x, isPlaying : false, playingTime:null});
             audioCtx.close();
-            Timer.reset();
         }, wantedDuration*1000);
+    }
 
-        Timer(this.drawSineWave);
+    drawForSeconds(seconds) {
+        let interval = 10;
+
+        this.drawSineWave();
+
+        if (this.state.drawTime >= (seconds*1000)) {
+            this.setState({
+                drawTimerId:null,
+                drawTime : 0
+            })
+        } else {
+            this.setState({
+                drawTimerId:setTimeout(this.drawForSeconds.bind(null, seconds), interval),
+                drawTime : this.state.drawTime + interval
+            });
+        }
     }
   
     drawSineWave() {
@@ -202,7 +206,7 @@ export default class VideoSynchronizer extends Component {
             if (this.state.clickX !== null) {
                 sinewaveСanvasCtx.beginPath();
                 if (this.state.isPlaying) {
-                    const timeDiff = (this.state.audioCtx.currentTime - this.state.time);
+                    const timeDiff = (this.state.audioCtx.currentTime - this.state.playingTime);
                     let offsetX = timeDiff/this.getStcDuration();
                     offsetX = offsetX*this.cvRef.current.offsetWidth;
                     sinewaveСanvasCtx.moveTo(this.state.clickX + offsetX, 0);

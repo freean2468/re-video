@@ -31,18 +31,10 @@ export default class VideoInfo extends Component {
       this.loadAudio();
     }
 
-    componentDidUpdate(prevProps) {
-      console.log('videoInfo did update');
+    componentDidUpdate(prevProps, prevState, snapshot) {
+      // console.log('prevProps : (' + prevProps.videoInfo.file + ') props : (' + this.props.videoInfo.file + ')');
       if (this.props.videoInfo.file !== prevProps.videoInfo.file) {
-        if (this.props.videoInfo.file !== undefined || this.props.videoInfo.file !== '') {
-          fetch('/api/getSourceList')
-          .then(res => res.json())
-          .then(res => this.setState({sourceList:res.source}));
-    
-          this.loadAudio();
-        } else {
-          this.setState({ audioBuffer:null });
-        }
+        this.loadAudio();
       }
     }
 
@@ -50,46 +42,43 @@ export default class VideoInfo extends Component {
       if (this.props.videoInfo.file !== undefined && this.props.videoInfo.file !== '') {
         const that = this;
         fetch(`/api/getAudio?source=${this.props.videoInfo.source}&name=${encodeURIComponent(this.props.videoInfo.file)}`)
-          .then(res => {
-            const reader = res.body.getReader();
-            let buffer = new Uint8Array(0);
+        .then(res => {
+          const reader = res.body.getReader();
+          let buffer = new Uint8Array(0);
 
-            function read(reader) {
-              return reader.read().then(({ done, value }) => {
-                if (done) {
-                    // console.log('audio load ended ');
-                    initAudioData(buffer);
-                    return null;
-                }
+          function read(reader) {
+            return reader.read().then(({ done, value }) => {
+              if (done) {
+                  const arrayBuffer = buffer.buffer,
+                  audioCtx = new(window.AudioContext || window.webkitAudioContext)();
 
-                function concatTypedArrays(a, b) { // a, b TypedArray of same type
-                  var c = new (a.constructor)(a.length + b.length);
-                  c.set(a, 0);
-                  c.set(b, a.length);
-                  return c;
-                }
-                buffer = concatTypedArrays(buffer, value);
+                  audioCtx.decodeAudioData(arrayBuffer, function(buffer) {
+                      console.log('loading auidobuffer completed!')
+                      that.setState({ audioBuffer : buffer });
+                    },
+                    function (e) {
+                      "Error with decoding audio data" + e.error
+                    }
+                  );
+                  return null;
+              }
 
-                return read(reader);
-              });
-            };
+              function concatTypedArrays(a, b) { // a, b TypedArray of same type
+                var c = new (a.constructor)(a.length + b.length);
+                c.set(a, 0);
+                c.set(b, a.length);
+                return c;
+              }
+              buffer = concatTypedArrays(buffer, value);
 
-            function initAudioData(buffer) {
-              const arrayBuffer = buffer.buffer,
-                    audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+              return read(reader);
+            });
+          };
 
-              audioCtx.decodeAudioData(arrayBuffer, function(buffer) {
-                  console.log('loading auidobuffer completed!')
-                  that.setState({ audioBuffer : buffer });
-                },
-                function (e) {
-                  "Error with decoding audio data" + e.error
-                }
-              );
-            }
-
-            return read(reader);
-          });
+          return read(reader);
+        });
+      } else {
+        this.setState({ audioBuffer:null });
       }
     }
   

@@ -3,118 +3,78 @@ import TextInfo from './TextInfo';
 import './textcanvas.css';
 import TextCanvas from './TextCanvas'
 
-function toArrayBuffer(buf) {
-  var ab = new ArrayBuffer(buf.length);
-  var view = new Uint8Array(ab);
-  for (var i = 0; i < buf.length; ++i) {
-      view[i] = buf[i];
-  }
-  return ab;
-}
-
 class SnapshotImg extends Component {
   constructor(props) {
     super(props);
+
     this.state = {
-      prevT : props.t,
+      t : props.t,
       buffer : null,
-      prevFile : props.videoInfo.file
+      fileName : props.videoInfo.file
     }
   }
 
   componentDidMount() {
-    if (this.state.prevFile !== undefined && this.state.prevFile !== '' && this.state.prevT >= 0) {
+    if (this.state.fileName !== undefined && this.state.fileName !== '' && this.state.t >= 0) {
       const that = this;
       fetch(`/api/getSnapshot?source=${this.props.videoInfo.source}
             &name=${encodeURIComponent(this.props.videoInfo.file)}&t=${this.props.t}
             &size=${this.props.width}x${this.props.height}`)
         .then(res => res.blob())
         .then(res => {
-          // console.log(res);
           let arrayBuffer = null;
           const fileReader = new FileReader();
 
           fileReader.onload = function(event) {
             arrayBuffer = event.target.result;
-            // console.log(arrayBuffer);
+            let src = new Blob([new Uint8Array(arrayBuffer)], {type:"image/jpeg"});
 
-            function toBuffer(ab) {
-              var buf = Buffer.alloc(ab.byteLength);
-              var view = new Uint8Array(ab);
-              for (var i = 0; i < buf.length; ++i) {
-                  buf[i] = view[i];
-              }
-              return buf;
-            }
-
-            let buffer = toBuffer(arrayBuffer);
-
-            that.setState({buffer : buffer});
+            that.setState({buffer : window.URL.createObjectURL(src)});
           };
           fileReader.readAsArrayBuffer(res);
         });
     }
   }
 
-  static getDerivedStateFromProps(props, state) {
-    if (props.videoInfo.file != state.prevFile || props.t !== state.prevT) {
-      console.log('hi')
-      if (props.file !== undefined && props.file !== '' && props.t >= 0) {
-        console.log('hi2')
-        fetch(`/api/getSnapshot?source=${props.videoInfo.source}
-              &name=${encodeURIComponent(props.videoInfo.file)}&t=${t}
-              &size=${props.width}x${props.height}`)
-          .then(res => res.blob())
-          .then(res => {
-            // console.log(res);
-            let arrayBuffer = null;
-            const fileReader = new FileReader();
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    const that = this;
+    // console.log('prevProps : (' + prevProps.videoInfo.file + ') prevState : (' + prevState.fileName + ')');
 
-            fileReader.onload = function(event) {
-              arrayBuffer = event.target.result;
-              // console.log(arrayBuffer);
-
-              function toBuffer(ab) {
-                var buf = Buffer.alloc(ab.byteLength);
-                var view = new Uint8Array(ab);
-                for (var i = 0; i < buf.length; ++i) {
-                    buf[i] = view[i];
-                }
-                return buf;
-              }
-
-              let buffer = toBuffer(arrayBuffer);
-
-              return {
-                prevT : props.t,
-                buffer : buffer,
-                prevFile : props.videoInfo.file
-              };
-            };
-            fileReader.readAsArrayBuffer(res);
-          });
+    if (prevProps.videoInfo.file !== prevState.fileName) {
+      if (prevProps.videoInfo.file === '') {
+        this.setState({
+          fileName : prevProps.videoInfo.file,
+          buffer : null
+        })
       } else {
-        return {
-          prevT : props.t,
-          buffer : null,
-          prevFile : props.videoInfo.file
-        };
+        fetch(`/api/getSnapshot?source=${prevProps.videoInfo.source}
+              &name=${encodeURIComponent(prevProps.videoInfo.file)}&t=${prevProps.t}
+              &size=${prevProps.width}x${prevProps.height}`)
+        .then(res => res.blob())
+        .then(res => {
+          let arrayBuffer = null;
+          const fileReader = new FileReader();
+
+          fileReader.onload = function(event) {
+            arrayBuffer = event.target.result;
+            let src = new Blob([new Uint8Array(arrayBuffer)], {type:"image/jpeg"});
+
+            that.setState({
+              t : prevProps.t,
+              buffer : window.URL.createObjectURL(src),
+              fileName : prevProps.videoInfo.file
+            })
+          };
+          fileReader.readAsArrayBuffer(res);
+        });
       }
     }
-    return null;
   }
 
   render() {
-    let src = null;
-
-    if (this.state.buffer !== null) {
-      let arrayBuffer = toArrayBuffer(this.state.buffer);
-      src = new Blob([arrayBuffer], {type:"image/jpeg"});
-    }
-
     return (
-      src &&
-      <img src={window.URL.createObjectURL(src)} type="image/jpeg"/>
+      this.state.buffer &&
+      <img src={this.state.buffer} type="image/jpeg"/>
     );
   }
 }
