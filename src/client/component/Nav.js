@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import './nav.css'
 
 class SearchGroup extends Component {
   constructor(props){
@@ -21,43 +22,69 @@ class SearchGroup extends Component {
 
 class ListItem extends Component {
   constructor(props) {
-    super(props)
-
+    super(props);
+    
     this.handleClick = this.handleClick.bind(this)
   }
 
   handleClick(e) {
     e.preventDefault();
-    fetch('/api/getFile?name='+this.props.name)
-      .then(res => res.json())
-      .then(file => {
-        this.props.loadVideo(this.props.name, file)
-      })
+    e.stopPropagation();
+    fetch(`/api/getFile?name=${this.props.id}&folder=${this.props.folder}`)
+    .then(res => res.json())
+    .then(file => {
+      this.props.loadVideoData(this.props.id, file)
+    })
   }
 
   render() {
     return (
-      <li onClick={this.handleClick}>
-        <a href="#">
-          {this.props.name}
+      <li className="ListItem" onClick={this.handleClick}>
+        <a className="List" href="#">
+          {this.props.file !== '' ? this.props.file : this.props.id }
         </a>
       </li>
     );
   }
 }
 
-class FileList extends Component {
+class NavList extends Component {
   constructor(props) {
-    super(props)
+    super(props);
+
+    this.state = {
+      selectedFolder:null
+    }
+
+    this.handleOnClick = this.handleOnClick.bind(this);
+  }
+
+  handleOnClick(key) {
+    if (this.state.selectedFolder === key) {
+      this.setState({selectedFolder:null});
+    } else {
+      this.setState({selectedFolder:key});
+    }
   }
 
   render() {
-    const list = this.props.list
-
     return (
-      <div>
+      <div className="NavList">
         <ul>
-          {list.map((name) => <ListItem key={name} name={name} loadVideo={this.props.loadVideo}/>)}
+          {Object.keys(this.props.list).map((folder) => 
+            <div className="Folder" key={folder} onClick={(e)=>this.handleOnClick(folder)}>
+              {this.state.selectedFolder === folder ?
+                '+'+folder : '-'+folder
+              }
+              
+              {this.state.selectedFolder === folder &&
+                this.props.list[folder].map((o) =>
+                  <ListItem key={o.id} folder={folder} id={o.id} file={o.file} 
+                            loadVideoData={this.props.loadVideoData}
+                  />
+              )}
+            </div>
+          )}
         </ul>
       </div>
     );
@@ -68,23 +95,23 @@ export default class Nav extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      videoList : []
+      navList : []
     }
   }
 
   componentDidMount() {
-    fetch('/api/getFileList')
-      .then(res => res.json())
-      .then(list => this.setState({videoList:list}))
+    fetch('/api/getNavList')
+    .then(res => res.json())
+    .then(list => this.setState({navList:list}))
   }
 
   render() {
     return (
       <div className="Nav">
         <SearchGroup/>
-        <FileList 
-          list={this.state.videoList} 
-          loadVideo={this.props.loadVideo}
+        <NavList 
+          list={this.state.navList}
+          loadVideoData={this.props.loadVideoData}
         />
       </div>
     );

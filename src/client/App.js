@@ -11,10 +11,10 @@ export default class App extends Component {
       videoInfo : null
     }
 
-    this.loadVideo = this.loadVideo.bind(this);
+    this.loadVideoData = this.loadVideoData.bind(this);
   }
 
-  loadVideo(name, json) {
+  loadVideoData(name, json) {
     let item = json;
     item['_id'] = name;
     this.setState({ videoInfo:item });
@@ -27,7 +27,7 @@ export default class App extends Component {
   render() {
     return (
       <div className="Wrapper">
-        <Nav loadVideo={this.loadVideo}/>
+        <Nav loadVideoData={this.loadVideoData}/>
         {this.state.videoInfo !== null && 
           <Main videoInfo={this.state.videoInfo}/>
         }

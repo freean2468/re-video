@@ -17,7 +17,7 @@ const stcTokenizer = new natural.SentenceTokenizer();
 var ffmpeg = require('fluent-ffmpeg');
 
 app.use(express.json({limit: '50mb'}));
-app.use(express.urlencoded({limit: '50mb'}));
+// app.use(express.urlencoded({limit: '50mb'}));
 
 const DATABASE_NAME = "sensebe_dictionary"
 const VIDEO_ARCHIVE_PATH = "collections/SB_VIDEO"
@@ -130,24 +130,35 @@ function getSourceList(res) {
     res.json(json);
 }
 
-function getFileList(res) {
-    const filelist = fs.readdirSync(VIDEO_ARCHIVE_PATH)
-    console.log(filelist)
-    var responseData = []
+function getNavList(res) {
+    const folderList = fs.readdirSync(VIDEO_ARCHIVE_PATH);
+    let responseData = {};
 
-    filelist.forEach(element => {
-        let fileName = element.split('.')[0]
-        let ex = element.split('.')[1]
-        if (ex === 'json') {
-            responseData.push(fileName)
+    folderList.forEach(folder => {
+        if (folder === '.DS_Store') {
+            return;
         }
+        responseData[folder]=[];
+        const fileList = fs.readdirSync(VIDEO_ARCHIVE_PATH+'/'+folder);
+        fileList.forEach(elm => {
+            const id = elm.split('.')[0];
+            const ex = elm.split('.')[1];
+            if (ex === 'json') {
+                const json = JSON.parse(fs.readFileSync(path.join(VIDEO_ARCHIVE_PATH,folder,elm), 'utf-8'))
+                responseData[folder].push({
+                    id : id,
+                    file : json.file
+                });
+            }
+        })
     });
 
     res.send(responseData)
 }
 
 function getFile(req, res) {
-    const file = JSON.parse(fs.readFileSync(path.join(VIDEO_ARCHIVE_PATH,req.query.name+'.json'), 'utf-8'))
+    const query = req.query, folder = query.folder, name = query.name;
+    const file = JSON.parse(fs.readFileSync(path.join(VIDEO_ARCHIVE_PATH,folder,name+'.json'), 'utf-8'))
 
     res.send(file)
 }
@@ -726,7 +737,7 @@ app.get('/api/parseStc', (req, res) => parseStc(req, res));
 // File
 app.get('/api/getSnapshot', (req, res) => getSnapshot(req, res));
 app.get('/api/getAudio', (req, res) => getAudio(req, res));
-app.get('/api/getFileList', (req, res) => getFileList(res));
+app.get('/api/getNavList', (req, res) => getNavList(res));
 app.get('/api/getFile', (req, res) => getFile(req, res));
 app.get('/api/getSourceList', (req, res) => getSourceList(res));
 
