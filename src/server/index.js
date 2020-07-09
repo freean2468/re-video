@@ -21,6 +21,7 @@ app.use(express.json({limit: '50mb'}));
 
 const DATABASE_NAME = "sensebe_dictionary"
 const VIDEO_ARCHIVE_PATH = "collections/SB_VIDEO"
+const VIDEO_DELETED_PATH = "collections/SB_VIDEO_DELETED"
 
 const VIDEO_COLLECTION = "SB_VIDEO"
 const ENG_BASE_COLLECTION = "SB_ENG_BASE"
@@ -141,14 +142,10 @@ function getNavList(res) {
         responseData[folder]=[];
         const fileList = fs.readdirSync(VIDEO_ARCHIVE_PATH+'/'+folder);
         fileList.forEach(elm => {
-            const id = elm.split('.')[0];
-            const ex = elm.split('.')[1];
+            const fileName = elm.substring(0, elm.lastIndexOf('.'));
+            const ex = elm.substring(elm.lastIndexOf('.')+1, elm.length);
             if (ex === 'json') {
-                const json = JSON.parse(fs.readFileSync(path.join(VIDEO_ARCHIVE_PATH,folder,elm), 'utf-8'))
-                responseData[folder].push({
-                    id : id,
-                    file : json.file
-                });
+                responseData[folder].push(fileName);
             }
         })
     });
@@ -156,18 +153,18 @@ function getNavList(res) {
     Object.keys(responseData).map((folder) => 
         responseData[folder].sort(function (a, b) {
             // console.log(a.file);
-            return a.file.localeCompare(b.file);
+            return a.localeCompare(b);
         })
     )
 
-    console.log(responseData);
+    // console.log(responseData);
 
     res.send(responseData)
 }
 
 function getFile(req, res) {
-    const query = req.query, folder = query.folder, name = query.name;
-    const file = JSON.parse(fs.readFileSync(path.join(VIDEO_ARCHIVE_PATH,folder,name+'.json'), 'utf-8'))
+    const query = req.query, folder = query.folder.trim(), fileName = query.fileName.trim();
+    const file = JSON.parse(fs.readFileSync(path.join(VIDEO_ARCHIVE_PATH,folder,fileName+'.json'), 'utf-8'))
 
     res.send(file)
 }
@@ -263,36 +260,43 @@ async function getStrtInfo(req, res) {
     }
 }
 
-async function deleteVideo(req, res) {
-    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`;
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-    const query = req.query, id = query.id.trim()
+// async function deleteVideo(req, res) {
+//     const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`;
+//     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+//     const query = req.query, id = query.id.trim(), folder = query.folder;
 
-    try {
-        // Connect to the MongoDB cluster
-        await client.connect();
+//     try {
+//         // Connect to the MongoDB cluster
+//         await client.connect();
 
-        let result = await client.db(DATABASE_NAME).collection(VIDEO_COLLECTION).findOne({ _id: id });
+//         let result = await client.db(DATABASE_NAME).collection(VIDEO_COLLECTION).findOne({ _id: id });
 
-        if (result) {
-            result = await client.db(DATABASE_NAME).collection(VIDEO_COLLECTION).deleteOne({ _id: id });
-            if (result.result.n != 1) {
-                throw new Error(result.result.n);
-            }
-            console.log(`[DeleteVideo] deleted video id(${id})`);
-            fs.unlinkSync(path.join(VIDEO_ARCHIVE_PATH, id+'.json'));
-        } else {
-            throw new Error('Something wrong');
-        }
+//         if (result) {
+//             result = await client.db(DATABASE_NAME).collection(VIDEO_COLLECTION).deleteOne({ _id: id });
+//             if (result.result.n != 1) {
+//                 throw new Error(result.result.n);
+//             }
+//             console.log(`[DeleteVideo] deleted video id(${id})`);
+//             const now = Date().now();
+//             fs.rename(path.join(VIDEO_ARCHIVE_PATH, folder, id+'.json'), 
+//                     path.join(VIDEO_DELETED_PATH, folder, id+'_'+now+'.json'),
+//                     function(err) {
+//                         if (err) throw err
+//                         console.log(path.join(VIDEO_ARCHIVE_PATH, folder, id+'.json')+' moved to '
+//                         + path.join(VIDEO_DELETED_PATH, folder, id+'_'+now+'.json'))
+//                     });
+//         } else {
+//             throw new Error('Something wrong');
+//         }
 
-        res.json({res:`[DeleteVideo] Deleted(${result.result.n})`})
-    } catch (e) {
-        console.error(e.stack);
-        res.json({res:e});
-    } finally {
-        await client.close()
-    }
-}
+//         res.json({res:`[DeleteVideo] Deleted(${result.result.n})`})
+//     } catch (e) {
+//         console.error(e.stack);
+//         res.json({res:e});
+//     } finally {
+//         await client.close()
+//     }
+// }
 
 async function deleteWdBase(req, res) {
     const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`;
@@ -374,7 +378,7 @@ async function deleteWdBase(req, res) {
                 }
             }
         } else {
-            throw new Error('None found from query');
+            console.log('None found from query');
         }
     } catch (e) {
         console.error(e.stack);
@@ -430,7 +434,6 @@ async function deleteStrtFromBase(req, res) {
                         for (let j = 0; j < result.strt_m[i].lk.length; ++j) {
                             if (result.strt_m[i].lk[j].link == link && result.strt_m[i].lk[j].pos.c == c
                                     && result.strt_m[i].lk[j].pos.stc == stc) {
-                                console.log('In!!');
                                 const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne({ 
                                     _id: rt.hashCode(),
                                     rt:rt,
@@ -482,22 +485,22 @@ async function insert(req, res) {
         await client.connect()
 
         let result = undefined
-        const _id = query._id
+        const _id = query.source+query.file;
+
+        query['_id'] = _id;
         
         // SB_VIDEO ISNERT
-        if (_id) 
-            result = await client.db(DATABASE_NAME).collection(VIDEO_COLLECTION).findOne({ _id: query['_id'] });
+        result = await client.db(DATABASE_NAME).collection(VIDEO_COLLECTION).findOne({ _id: _id });
             
         if (result) {
             await replaceListing(client, query, VIDEO_COLLECTION);
             console.log('[VIDEO_REPLACE_LISTING] _id : ',_id);
         } else {
-            console.log('[VIDEO_CREATE_LISTING] _id : ', query._id);
+            console.log('[VIDEO_CREATE_LISTING] _id : ', _id);
             await createListing(client, query, VIDEO_COLLECTION);
         }
 
         delete query._id;
-        console.log(_id);
         fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH, folder, _id+'.json'), JSON.stringify(query, null, "\t"), "utf-8")
 
         // INSERT into SB_ENG_BASE  
@@ -625,7 +628,7 @@ async function insert(req, res) {
                                     strt_m:[]
                                 };
                                 await insertBase(rtListing, rt.hashCode());
-                                
+
                                 if (wordList[rt] === undefined) {
                                     wordList[rt] = rt.hashCode();
                                 }
@@ -749,7 +752,7 @@ app.post('/api/insertCanvasInfo', (req, res) => insertCanvasInfo(req, res));
 app.get('/api/getCanvasInfo', (req, res) => getCanvasInfo(req, res));
 app.get('/api/getWdInfo', (req, res) => getWdInfo(req, res));
 app.get('/api/getStrtInfo', (req, res) => getStrtInfo(req, res));
-app.get('/api/deleteVideo', (req, res) => deleteVideo(req, res));
+// app.get('/api/deleteVideo', (req, res) => deleteVideo(req, res));
 app.get('/api/deleteWdBase', (req, res) => deleteWdBase(req, res));
 app.get('/api/deleteStrtFromBase', (req, res) => deleteStrtFromBase(req, res));
 

@@ -9,18 +9,22 @@ export default class VideoInfo extends Component {
     constructor(props) {
       super(props)
       this.state = {
-        isDisabled : true,
         sourceList : [],
         audioBuffer : null
       };
+
+      this.init = this.init.bind(this);
 
       this.loadAudio = this.loadAudio.bind(this);
 
       this.handleChange = this.handleChange.bind(this);
       this.handleClickInsert = this.handleClickInsert.bind(this);
       this.updateSceneCut = this.updateSceneCut.bind(this);
-      this.handleClickToggler = this.handleClickToggler.bind(this);
       this.handleOnChangeFile = this.handleOnChangeFile.bind(this);
+    }
+
+    init() {
+      this.loadAudio();
     }
 
     componentDidMount() {
@@ -28,13 +32,13 @@ export default class VideoInfo extends Component {
       .then(res => res.json())
       .then(res => this.setState({sourceList:res.source}));
 
-      this.loadAudio();
+      this.init();
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
       // console.log('prevProps : (' + prevProps.videoInfo.file + ') props : (' + this.props.videoInfo.file + ')');
       if (this.props.videoInfo.file !== prevProps.videoInfo.file) {
-        this.loadAudio();
+        this.init();
       }
     }
 
@@ -98,20 +102,6 @@ export default class VideoInfo extends Component {
         .then(res => console.log('[INSERT RES] ',res.res))
     }
 
-    handleClickToggler() {
-      let isDisabled = this.state.isDisabled;
-
-      this.setState({isDisabled:!this.state.isDisabled});
-
-      if (isDisabled) {
-        fetch(`/api/deleteVideo?id=${this.props.videoInfo._id}`)
-          .then(res => res.json())
-          .then(res => console.log('[deleteVideo_RES] : ', res))
-      } else {
-        this.handleClickInsert();
-      }
-    }
-
     handleOnChangeFile(e) {
       let fullName = event.target.files[0].name;
       let idx = fullName.lastIndexOf('.');
@@ -132,17 +122,12 @@ export default class VideoInfo extends Component {
       return (
         <div className="VideoInfo">
           <span className="MarginRight">
-            _id (link) :
+            link :
             <input
               type="text"
-              value={this.props.videoInfo['_id']}
-              onChange={(e) => this.handleChange('_id', e.target.value)}
-              disabled={(this.state.isDisabled)? "disabled" : ""}
+              value={this.props.videoInfo.link}
+              onChange={(e) => this.handleChange('link', e.target.value)}
             />
-            <button
-              className="Toggler"
-              onClick={this.handleClickToggler}
-            >Toggler</button>
           </span>
           <span className="MarginRight">
             source :
@@ -166,7 +151,6 @@ export default class VideoInfo extends Component {
                   idx={idx}
                   updateSceneCut={this.updateSceneCut}
                   insert={this.handleClickInsert}
-                  link={this.props.videoInfo._id}
                   buffer={this.state.audioBuffer}
                   videoInfo={this.props.videoInfo}
                 />)

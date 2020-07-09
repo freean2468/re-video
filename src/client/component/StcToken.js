@@ -113,10 +113,15 @@ export default class StcToken extends Component {
     }
 
     updateWdTokenIb(item, idx, st) {
+      if (st > this.props.et) {
+        this.handleChange('wd', item);
+        return false;
+      }
       if (this.props.videoInfo.file !== undefined) {
         const that = this;
         fetch(`/api/getSnapshot?source=${this.props.videoInfo.source}
-              &name=${encodeURIComponent(this.props.videoInfo.file)}&t=${st}&size=160x90`)
+              &name=${encodeURIComponent(this.props.videoInfo.file)}
+              &t=${st}&size=160x90`)
           .then(res => res.blob())
           .then(res => {
             // console.log(res);
@@ -212,7 +217,7 @@ export default class StcToken extends Component {
           <br></br>
           <VideoSynchronizer st={this.props.st} 
                             et={this.props.et} 
-                            link={this.props.link} 
+                            link={this.props.videoInfo.source+this.props.videoInfo.file} 
                             buffer={this.props.buffer}
                             wd={this.props.stc.wd}
                             updateWdTokenSt={this.updateWdTokenSt}
@@ -227,12 +232,11 @@ export default class StcToken extends Component {
                 idx={idx}
                 c={this.props.c}
                 stc={this.props.idx}
-                link={this.props.link}
+                link={this.props.videoInfo.source+this.props.videoInfo.file}
                 insert={this.insert}
                 updateWdToken={this.updateWdToken}
                 delWd={this.delWd}
                 updateWdTokenSt={this.updateWdTokenSt}
-                videoInfo={this.props.videoInfo}
                 buffer={this.props.buffer}
               />)
           }
@@ -244,7 +248,7 @@ export default class StcToken extends Component {
                 idx={idx}
                 c={this.props.c}
                 stc={this.props.idx}
-                link={this.props.link}
+                link={this.props.videoInfo.source+this.props.videoInfo.file}
                 insert={this.insert}
                 updateStrtToken={this.updateStrtToken}
                 delStrt={this.delStrt}

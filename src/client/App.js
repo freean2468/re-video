@@ -15,14 +15,12 @@ export default class App extends Component {
     this.loadVideoData = this.loadVideoData.bind(this);
   }
 
-  loadVideoData(name, folder, json) {
-    let item = json;
-    item['_id'] = name;
-    this.setState({ folder: folder, videoInfo:item });
-  }
-
-  componentDidMount() {
-    document.title = 'Re-video';
+  loadVideoData(folder, json) {
+    json.link = json.link || '';
+    json.c.map((t) => {
+      t.cv = t.cv || {}
+    })
+    this.setState({ folder: folder, videoInfo:json });
   }
 
   render() {

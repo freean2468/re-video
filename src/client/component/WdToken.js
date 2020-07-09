@@ -80,13 +80,15 @@ export default class WdToken extends Component {
 
       if (isDisabled) {
         this.loadLtList();
-        fetch(`/api/deleteWdBase?ct=${this.props.wd.ct}&lt=${this.props.wd.lt}&link=${this.props.link}
+        fetch(`/api/deleteWdBase?ct=${this.props.wd.ct}&lt=${this.props.wd.lt}
+              &link=${encodeURIComponent(this.props.link)}
               &c=${this.props.c}&stc=${this.props.stc}&wd=${this.props.idx}`)
           .then(res => res.json())
           .then(res => console.log('[deleteWdBase_CT_RES] : ', res))
 
         if (this.props.wd.rt !== '') {
-          fetch(`/api/deleteWdBase?ct=${this.props.wd.rt}&lt=${this.props.wd.lt}&link=${this.props.link}
+          fetch(`/api/deleteWdBase?ct=${this.props.wd.rt}&lt=${this.props.wd.lt}
+                &link=${encodeURIComponent(this.props.link)}
                 &c=${this.props.c}&stc=${this.props.stc}&wd=${this.props.idx}`)
             .then(res => res.json())
             .then(res => console.log('[deleteWdBase_RT_RES] : ', res))

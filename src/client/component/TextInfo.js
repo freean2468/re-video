@@ -96,7 +96,6 @@ export default class TextInfo extends Component {
                   stc={stc}
                   idx={idx}
                   c={this.props.c}
-                  link={this.props.link}
                   insert={this.insert}
                   updateStcToken={this.updateStcToken}
                   delStc={this.delStc}

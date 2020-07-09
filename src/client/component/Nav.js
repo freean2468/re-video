@@ -30,18 +30,19 @@ class ListItem extends Component {
   handleClick(e) {
     e.preventDefault();
     e.stopPropagation();
-    fetch(`/api/getFile?name=${this.props.id}&folder=${this.props.folder}`)
+    fetch(`/api/getFile?fileName=${encodeURIComponent(this.props.fileName)}
+          &folder=${encodeURIComponent(this.props.folder)}`)
     .then(res => res.json())
     .then(file => {
-      this.props.loadVideoData(this.props.id, this.props.folder, file)
-    })
+      this.props.loadVideoData(this.props.folder, file)
+    });
   }
 
   render() {
     return (
       <li className="ListItem" onClick={this.handleClick}>
         <a className="List" href="#">
-          {this.props.file !== '' ? this.props.file : this.props.id }
+          {this.props.fileName}
         </a>
       </li>
     );
@@ -78,8 +79,8 @@ class NavList extends Component {
               }
               
               {this.state.selectedFolder === folder &&
-                this.props.list[folder].map((o) =>
-                  <ListItem key={o.id} folder={folder} id={o.id} file={o.file} 
+                this.props.list[folder].map((fileName) =>
+                  <ListItem key={fileName} folder={folder} fileName={fileName} 
                             loadVideoData={this.props.loadVideoData}
                   />
               )}

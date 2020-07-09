@@ -175,7 +175,7 @@ export default class SceneCut extends Component {
               <TextCanvas cv={this.props.cut['cv']} 
                 t={this.props.cut.t}
                 idx={this.props.idx}
-                source={this.props.source}
+                source={this.props.videoInfo.source}
                 updateCanvasInfo={this.updateCanvasInfo}
                 width={this.state.width}
                 height={this.state.height}
@@ -198,7 +198,6 @@ export default class SceneCut extends Component {
             t={this.props.cut['t']} 
             insert={this.insert}
             updateTextInfo={this.updateTextInfo}
-            link={this.props.link}
             st={this.props.cut.st}
             et={this.props.cut.et}
             buffer={this.props.buffer}

@@ -109,6 +109,7 @@ export default class TextCanvas extends Component {
     }
 
     handleClickLoad() {
+        console.log(this.props.source);
         fetch(`/api/getCanvasInfo?source=${this.props.source}`)
             .then(res => res.json())
             .then(res => {
