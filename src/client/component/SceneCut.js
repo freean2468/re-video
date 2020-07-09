@@ -69,6 +69,33 @@ class SnapshotImg extends Component {
         });
       }
     }
+
+    // console.log('prevProps.t : (' + prevProps.t + ') this.props.t : (' + this.props.t + ')');
+    if (prevProps.t !== this.props.t) {
+      if (this.props.t >= 0) {
+        const that = this;
+        fetch(`/api/getSnapshot?source=${this.props.videoInfo.source}
+              &name=${encodeURIComponent(this.props.videoInfo.file)}&t=${this.props.t}
+              &size=${this.props.width}x${this.props.height}`)
+        .then(res => res.blob())
+        .then(res => {
+          let arrayBuffer = null;
+          const fileReader = new FileReader();
+
+          fileReader.onload = function(event) {
+            arrayBuffer = event.target.result;
+            let src = new Blob([new Uint8Array(arrayBuffer)], {type:"image/jpeg"});
+
+            that.setState({
+              t : that.props.t,
+              buffer : window.URL.createObjectURL(src),
+              fileName : that.props.videoInfo.file
+            })
+          };
+          fileReader.readAsArrayBuffer(res);
+        });
+      }
+    }
   }
 
   render() {
@@ -93,8 +120,6 @@ export default class SceneCut extends Component {
 
       this.state.height = this.state.width*9/16;
 
-      this.handleChangeSt = this.handleChangeSt.bind(this);
-      this.handleChangeEt = this.handleChangeEt.bind(this);
       this.handleChange = this.handleChange.bind(this);
 
       this.updateTextInfo = this.updateTextInfo.bind(this);
@@ -103,15 +128,6 @@ export default class SceneCut extends Component {
       this.insert = props.insert.bind(this);
       this.updateSceneCut = props.updateSceneCut.bind(this);
     }
-
-    handleChangeSt(value){
-      this.handleChange('st', value);
-    }
-
-    handleChangeEt(value){
-      this.handleChange('et', value);
-    }
-  
     handleChange(key, value){
       let item = this.props.cut;
       // computed property
@@ -148,7 +164,7 @@ export default class SceneCut extends Component {
             <input
               type='text'
               value={this.props.cut[st]}
-              onChange={(e) => this.handleChangeSt(e.target.value)}
+              onChange={(e) => this.handleChange('st', e.target.value)}
             />
           </div>
           <div className="TextCanvasContainer">
@@ -171,7 +187,7 @@ export default class SceneCut extends Component {
             <input
               type='text'
               value={this.props.cut[et]}
-              onChange={(e) => this.handleChangeEt(e.target.value)}
+              onChange={(e) => this.handleChange('et', e.target.value)}
             />
           </div>
           <SnapshotImg t={this.props.cut.et} videoInfo={this.props.videoInfo}

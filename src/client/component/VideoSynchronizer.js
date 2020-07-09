@@ -46,6 +46,9 @@ export default class VideoSynchronizer extends Component {
             if (this.props.buffer !== null) {
                 this.drawSineWave();
             }
+            this.setState({
+                selectedIdx:null
+            })
         }
     }
 
@@ -232,18 +235,20 @@ export default class VideoSynchronizer extends Component {
             // draw wd
             sinewaveСanvasCtx.strokeStyle="rgb(0,0,255)";
 
-            for (let i = 0; i < this.props.wd.length; ++i) {
-                let durationX = this.props.wd[i].st;
-                if (durationX === '') {
-                    durationX = width/this.props.wd.length*i
-                } else {
-                    durationX = this.getWdDurationX(durationX);
+            if (this.props.wd) {
+                for (let i = 0; i < this.props.wd.length; ++i) {
+                    let durationX = this.props.wd[i].st;
+                    if (durationX === '') {
+                        durationX = width/this.props.wd.length*i
+                    } else {
+                        durationX = this.getWdDurationX(durationX);
+                    }
+                    sinewaveСanvasCtx.fillText(`${this.props.wd[i].ct}`, durationX, height-10);
+                    sinewaveСanvasCtx.beginPath();
+                    sinewaveСanvasCtx.moveTo(durationX, 0);
+                    sinewaveСanvasCtx.lineTo(durationX, height);
+                    sinewaveСanvasCtx.stroke();
                 }
-                sinewaveСanvasCtx.fillText(`${this.props.wd[i].ct}`, durationX, height-10);
-                sinewaveСanvasCtx.beginPath();
-                sinewaveСanvasCtx.moveTo(durationX, 0);
-                sinewaveСanvasCtx.lineTo(durationX, height);
-                sinewaveСanvasCtx.stroke();
             }
         }
     }

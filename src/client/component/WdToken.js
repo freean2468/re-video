@@ -13,12 +13,12 @@ export default class WdToken extends Component {
       };
 
       this.handleChange = this.handleChange.bind(this);
-      this.handleChangeSt = this.handleChangeSt.bind(this);
       this.loadLtList = this.loadLtList.bind(this);
       this.handleClickDelWd = this.handleClickDelWd.bind(this);
       this.handleClickToggler = this.handleClickToggler.bind(this);
   
       this.insert = props.insert.bind(this);
+      this.updateWdTokenSt = props.updateWdTokenSt.bind(this);
       this.updateWdToken = props.updateWdToken.bind(this);
       this.delWd = props.delWd.bind(this);
   
@@ -34,9 +34,13 @@ export default class WdToken extends Component {
       this.updateWdToken(this.props.wd, this.props.idx);
     }
 
-    handleChangeSt(value) {
-      this.loadImage(value);
-      this.handleChange('st', value);
+    componentDidUpdate(prevProps){
+      if (prevProps.wd !== this.props.wd) {
+        this.setState({
+          isDisabled:true,
+          ltList:[]
+        })
+      }
     }
   
     handleChange(key, value){  
@@ -135,7 +139,7 @@ export default class WdToken extends Component {
           <input
             className="St"
             value={this.props.wd.st}
-            onChange={(e) => this.handleChangeSt(e.target.value)}
+            onChange={(e) => this.updateWdTokenSt(this.props.idx, e.target.value)}
           />
           {dp}:
           <input

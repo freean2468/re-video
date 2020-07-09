@@ -82,7 +82,7 @@ function getSnapshot(req, res) {
         .on('error', function (err) {
             console.log('an error happened: ' + err.message);
             res.writeHead(404);
-            res.end(error.message);
+            res.end(err.message);
         })
         .screenshots({
             // count: 1,
@@ -298,7 +298,7 @@ async function deleteWdBase(req, res) {
     const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`;
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
     const query = req.query, 
-        ct = query.ct.trim(), lt = query.lt.trim(), link = query.link.trim()
+        ct = query.ct.trim(), lt = query.lt.trim(), link = query.link.trim(),
         c = query.c.trim(), stc = query.stc.trim(), wd = query.wd.trim();
 
     try {
@@ -311,8 +311,12 @@ async function deleteWdBase(req, res) {
             'wd_m.lt': lt
         });
 
+        // console.log('lt : ', lt);
+        // console.log('link : ', link);
+        // console.log('pos : c('+c+') stc('+stc+') wd('+wd+')');
+
         if (result) {
-            console.log(result);
+            // console.log(result);
             for (let i = 0; i < result.wd_m.length; ++i) {
                 if (result.wd_m[i].lt === lt) {
                     if (result.wd_m[i].lk.length <= 1) {
@@ -320,8 +324,10 @@ async function deleteWdBase(req, res) {
                             _id: ct.hashCode(),
                             rt:ct,
                             'wd_m.lt': lt,
-                            'wd_m.lk.link':link,
-                            'wd_m.lk.pos':{c:parseInt(c), stc:parseInt(stc), wd:parseInt(wd)}
+                            'wd_m.lk.vid':link,
+                            'wd_m.lk.c':parseInt(c),
+                            'wd_m.lk.stc':parseInt(stc),
+                            'wd_m.lk.wd':parseInt(wd)
                         },
                         {
                             $pull:{
@@ -332,7 +338,7 @@ async function deleteWdBase(req, res) {
                         });
 
                         if (test.result.nModified !== 1)
-                            throw new Error(test.result.nModified);
+                            throw new Error(test.result.nModified + ' has been modified');
                     } else {
                         for (let j = 0; j < result.wd_m[i].lk.length; ++j) {
                             if (result.wd_m[i].lk[j].link.trim() == link.trim() && result.wd_m[i].lk[j].pos.c == c
@@ -341,20 +347,24 @@ async function deleteWdBase(req, res) {
                                     _id: ct.hashCode(),
                                     rt:ct,
                                     'wd_m.lt': lt,
-                                    'wd_m.lk.link':link,
-                                    'wd_m.lk.pos':{c:parseInt(c), stc:parseInt(stc), wd:parseInt(wd)}
+                                    'wd_m.lk.vid':link,
+                                    'wd_m.lk.c':parseInt(c),
+                                    'wd_m.lk.stc':parseInt(stc),
+                                    'wd_m.lk.wd':parseInt(wd)
                                 },
                                 {
                                     $pull:{
                                         'wd_m.$[].lk' : {
-                                            link: link , 
-                                            pos: {c:parseInt(c), stc:parseInt(stc), wd:parseInt(wd)}
+                                            vid: link , 
+                                            c: parseInt(c),
+                                            stc: parseInt(stc), 
+                                            wd:parseInt(wd)
                                         }
                                     }
                                 });
 
                                 if (test.result.nModified !== 1)
-                                    throw new Error(test.result.nModified);
+                                    throw new Error(test.result.nModified + ' has been modified');
                                 break;
                             }
                         }
@@ -364,7 +374,7 @@ async function deleteWdBase(req, res) {
                 }
             }
         } else {
-            throw new Error('Something wrong');
+            throw new Error('None found from query');
         }
     } catch (e) {
         console.error(e.stack);
@@ -377,7 +387,7 @@ async function deleteWdBase(req, res) {
 async function deleteStrtFromBase(req, res) {
     const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`;
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-    const query = req.query, rt = query.rt.trim(), t = query.t.trim(), link = query.link.trim()
+    const query = req.query, rt = query.rt.trim(), t = query.t.trim(), link = query.link.trim(),
         c = query.c.trim(), stc = query.stc.trim();
 
         
@@ -402,9 +412,9 @@ async function deleteStrtFromBase(req, res) {
                             _id: rt.hashCode(),
                             rt:rt,
                             'strt_m.t': t,
-                            'strt_m.lk.link':link,
-                            'strt_m.lk.pos.c':parseInt(c),
-                            'strt_m.lk.pos.stc':parseInt(stc)
+                            'strt_m.lk.vid':link,
+                            'strt_m.lk.c':parseInt(c),
+                            'strt_m.lk.stc':parseInt(stc)
                         },
                         {
                             $pull:{
@@ -425,16 +435,16 @@ async function deleteStrtFromBase(req, res) {
                                     _id: rt.hashCode(),
                                     rt:rt,
                                     'strt_m.t': t,
-                                    'strt_m.lk.link':link,
-                                    'strt_m.lk.pos.c':parseInt(c),
-                                    'strt_m.lk.pos.stc':parseInt(stc)
+                                    'strt_m.lk.vid':link,
+                                    'strt_m.lk.c':parseInt(c),
+                                    'strt_m.lk.stc':parseInt(stc)
                                 },
                                 {
                                     $pull:{
                                         'strt_m.$[].lk' : {
-                                            link: link , 
-                                            'pos.c': parseInt(c), 
-                                            'pos.stc':parseInt(stc)
+                                            'vid': link , 
+                                            'c': parseInt(c), 
+                                            'stc':parseInt(stc)
                                         }
                                     }
                                 });
@@ -578,7 +588,7 @@ async function insert(req, res) {
                             // firstly, insert ct listing into base collection
                             const ctListing = { 
                                 _id: ct.hashCode(), 
-                                rt: rt,
+                                rt: ct,
                                 wd_m: [{  
                                     lt: data['lt'],
                                     lk:[{
@@ -592,6 +602,10 @@ async function insert(req, res) {
                                 strt_m:[]
                             };
                             await insertBase(ctListing, ct.hashCode());
+                            
+                            if (wordList[ct] === undefined) {
+                                wordList[ct] = ct.hashCode();
+                            }
 
                             // then rt
                             if (ct !== rt) {
@@ -611,10 +625,10 @@ async function insert(req, res) {
                                     strt_m:[]
                                 };
                                 await insertBase(rtListing, rt.hashCode());
-                            }
-                            
-                            if (wordList[ct] === undefined) {
-                                wordList[ct] = hashId;
+                                
+                                if (wordList[rt] === undefined) {
+                                    wordList[rt] = rt.hashCode();
+                                }
                             }
                         }
                     }

@@ -231,7 +231,7 @@ export default class StcToken extends Component {
                 insert={this.insert}
                 updateWdToken={this.updateWdToken}
                 delWd={this.delWd}
-                updateWdTokenIb={this.updateWdTokenIb}
+                updateWdTokenSt={this.updateWdTokenSt}
                 videoInfo={this.props.videoInfo}
                 buffer={this.props.buffer}
               />)
