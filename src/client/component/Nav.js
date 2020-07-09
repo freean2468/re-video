@@ -33,7 +33,7 @@ class ListItem extends Component {
     fetch(`/api/getFile?name=${this.props.id}&folder=${this.props.folder}`)
     .then(res => res.json())
     .then(file => {
-      this.props.loadVideoData(this.props.id, file)
+      this.props.loadVideoData(this.props.id, this.props.folder, file)
     })
   }
 

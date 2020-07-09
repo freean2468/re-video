@@ -89,7 +89,7 @@ export default class VideoInfo extends Component {
     }
   
     handleClickInsert() {
-      fetch('/api/insert', {
+      fetch(`/api/insert?folder=${this.props.folder}`, {
           method: 'POST',
           body: JSON.stringify(this.props.videoInfo),
           headers: {"Content-Type": "application/json"}

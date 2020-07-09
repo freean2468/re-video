@@ -153,6 +153,15 @@ function getNavList(res) {
         })
     });
 
+    Object.keys(responseData).map((folder) => 
+        responseData[folder].sort(function (a, b) {
+            // console.log(a.file);
+            return a.file.localeCompare(b.file);
+        })
+    )
+
+    console.log(responseData);
+
     res.send(responseData)
 }
 
@@ -456,7 +465,7 @@ async function insert(req, res) {
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
 
     req.accepts('application/json');
-    const query = req.body
+    const query = req.body, folder = req.query.folder;
 
     try {
         // Connect to the MongoDB cluster
@@ -479,7 +488,7 @@ async function insert(req, res) {
 
         delete query._id;
         console.log(_id);
-        fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH, _id+'.json'), JSON.stringify(query, null, "\t"), "utf-8")
+        fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH, folder, _id+'.json'), JSON.stringify(query, null, "\t"), "utf-8")
 
         // INSERT into SB_ENG_BASE  
         let wordList = JSON.parse(fs.readFileSync(LIST_OF_WORD, "utf8"));

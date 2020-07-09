@@ -13,7 +13,7 @@ export default class Main extends Component {
   render() {
     return (
       <div className="Main">
-        <VideoInfo videoInfo={this.props.videoInfo}/>
+        <VideoInfo folder={this.props.folder} videoInfo={this.props.videoInfo}/>
       </div>
     );
   }

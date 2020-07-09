@@ -8,16 +8,17 @@ export default class App extends Component {
     super(props)
 
     this.state = {
+      folder : null,
       videoInfo : null
     }
 
     this.loadVideoData = this.loadVideoData.bind(this);
   }
 
-  loadVideoData(name, json) {
+  loadVideoData(name, folder, json) {
     let item = json;
     item['_id'] = name;
-    this.setState({ videoInfo:item });
+    this.setState({ folder: folder, videoInfo:item });
   }
 
   componentDidMount() {
@@ -29,7 +30,7 @@ export default class App extends Component {
       <div className="Wrapper">
         <Nav loadVideoData={this.loadVideoData}/>
         {this.state.videoInfo !== null && 
-          <Main videoInfo={this.state.videoInfo}/>
+          <Main folder={this.state.folder} videoInfo={this.state.videoInfo}/>
         }
       </div>
     );

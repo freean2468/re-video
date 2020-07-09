@@ -105,16 +105,10 @@ export default class SceneCut extends Component {
     }
 
     handleChangeSt(value){
-      if (parseInt(value) >= 0) {
-        this.getSnapshot('st', value);
-      }
       this.handleChange('st', value);
     }
 
     handleChangeEt(value){
-      if (parseInt(value) >= 0) {
-        this.getSnapshot('et', value);
-      }
       this.handleChange('et', value);
     }
   
