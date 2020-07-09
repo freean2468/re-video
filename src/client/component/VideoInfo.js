@@ -57,7 +57,6 @@ export default class VideoInfo extends Component {
                   audioCtx = new(window.AudioContext || window.webkitAudioContext)();
 
                   audioCtx.decodeAudioData(arrayBuffer, function(buffer) {
-                      console.log('loading auidobuffer completed!')
                       that.setState({ audioBuffer : buffer });
                     },
                     function (e) {

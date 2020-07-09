@@ -24,7 +24,9 @@ export default class TextCanvas extends Component {
     }
 
     initiateDisplay() {
+        let scrt = [];
         let stc = this.props.t.stc;
+
         for (let j = 0; j < stc.length; ++j) {
             let ct = stc[j].ct,
                 wd = stc[j].wd,
@@ -68,9 +70,11 @@ export default class TextCanvas extends Component {
                     }
                 }
 
-                this.state.scrt.push(<WdDisplay key={`${j}${k}`} token={dp} isSpace={isSpace}/>);
+                scrt.push(<WdDisplay key={`${j}${k}`} token={dp} isSpace={isSpace}/>);
             }
         }
+
+        this.setState({scrt:scrt});
 
         if (this.props.cv === undefined) {
             fetch(`/api/getCanvasInfo?source=${this.props.source}`)
@@ -99,6 +103,12 @@ export default class TextCanvas extends Component {
         }, 1000)});
     }
 
+    componentDidUpdate(prevProps) {
+        if (prevProps.t.stc !== this.props.t.stc) {
+            this.initiateDisplay();
+        }
+    }
+
     componentWillUnmount() {
         clearInterval(this.state.interval);
     }
@@ -109,7 +119,6 @@ export default class TextCanvas extends Component {
     }
 
     handleClickLoad() {
-        console.log(this.props.source);
         fetch(`/api/getCanvasInfo?source=${this.props.source}`)
             .then(res => res.json())
             .then(res => {
@@ -172,7 +181,8 @@ export default class TextCanvas extends Component {
                         paddingLeft:`${pl}%`,
                         paddingRight:`${pr}%`,
                         paddingTop:`${pt}%`,
-                    }}>
+                    }}
+                >
                     {this.state.scrt.map((token)=>token)}
                 </div>
                 <span className="CanvasOptions">

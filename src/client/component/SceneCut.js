@@ -171,16 +171,14 @@ export default class SceneCut extends Component {
             <SnapshotImg t={this.props.cut.st} videoInfo={this.props.videoInfo}
                         width={this.state.width} height={this.state.height}
             />
-            {this.props.cut.cv &&
-              <TextCanvas cv={this.props.cut['cv']} 
-                t={this.props.cut.t}
-                idx={this.props.idx}
-                source={this.props.videoInfo.source}
-                updateCanvasInfo={this.updateCanvasInfo}
-                width={this.state.width}
-                height={this.state.height}
-              />
-            }
+            <TextCanvas cv={this.props.cut['cv']} 
+              t={this.props.cut.t}
+              idx={this.props.idx}
+              source={this.props.videoInfo.source}
+              updateCanvasInfo={this.updateCanvasInfo}
+              width={this.state.width}
+              height={this.state.height}
+            />
           </div>
           <div>
             {et} : 
