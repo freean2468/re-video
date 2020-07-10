@@ -10,7 +10,8 @@ export default class VideoInfo extends Component {
       super(props)
       this.state = {
         sourceList : [],
-        audioBuffer : null
+        audioBuffer : null,
+        cvTypeList : []
       };
 
       this.init = this.init.bind(this);
@@ -19,12 +20,21 @@ export default class VideoInfo extends Component {
 
       this.handleChange = this.handleChange.bind(this);
       this.handleClickInsert = this.handleClickInsert.bind(this);
-      this.updateSceneCut = this.updateSceneCut.bind(this);
       this.handleOnChangeFile = this.handleOnChangeFile.bind(this);
+
+      this.updateCvTypeList = this.updateCvTypeList.bind(this);
+      this.updateSceneCut = this.updateSceneCut.bind(this);
     }
 
     init() {
       this.loadAudio();
+
+      // type
+      fetch(`/api/getCanvasType?source=${this.props.videoInfo.source}`)
+      .then(res => res.json())
+      .then(res => {
+          this.setState({cvTypeList:res});
+      })
     }
 
     componentDidMount() {
@@ -37,7 +47,9 @@ export default class VideoInfo extends Component {
 
     componentDidUpdate(prevProps, prevState, snapshot) {
       // console.log('prevProps : (' + prevProps.videoInfo.file + ') props : (' + this.props.videoInfo.file + ')');
+      // console.log('VideoInfo Did Update');
       if (this.props.videoInfo.file !== prevProps.videoInfo.file) {
+        // console.log('VideoInfo Did Update inside');
         this.init();
       }
     }
@@ -116,6 +128,10 @@ export default class VideoInfo extends Component {
       item[idx] = cut;
       this.handleChange('c', item)
     }
+
+    updateCvTypeList(array) {
+      this.setState({cvTypeList:array});
+    }
   
     render() {
       return (
@@ -152,6 +168,8 @@ export default class VideoInfo extends Component {
                   insert={this.handleClickInsert}
                   buffer={this.state.audioBuffer}
                   videoInfo={this.props.videoInfo}
+                  cvTypeList={this.state.cvTypeList}
+                  updateCvTypeList={this.updateCvTypeList}
                 />)
             }
           </div>

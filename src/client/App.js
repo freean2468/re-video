@@ -18,7 +18,14 @@ export default class App extends Component {
   loadVideoData(folder, json) {
     json.link = json.link || '';
     json.c.map((t) => {
-      t.cv = t.cv || {}
+      t.cv = t.cv || {
+        ff : 'PT Sans, sans-serif',
+        pl : 0,
+        pr : 0,
+        pt : 0,
+        fs : 0,
+        type : ''
+      }
     })
     this.setState({ folder: folder, videoInfo:json });
   }

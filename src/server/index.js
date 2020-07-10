@@ -179,21 +179,59 @@ function tokenizeStc(req, res) {
     res.json(token)
 }
 
-async function getCanvasInfo(req, res) {
+async function getCanvasType(req, res) {
     const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
-    const query = req.query
+    const query = req.query, source = query.source;
 
     try {
         // Connect to the MongoDB cluster
         await client.connect()
 
-        let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: query['source'] });
+        let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: source });
 
-        res.json(result);
+        if (result) {
+            delete result._id
+            res.json(Object.keys(result));
+        } else {
+            throw new Error('not found according to the source('+source+')');
+        }
     } catch (e) {
-        console.error(e.stack)
-        res.json({res:e})
+        console.error(e.stack);
+        res.json([]);
+    } finally {
+        await client.close()
+    }
+}
+
+async function getCanvasInfo(req, res) {
+    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    const query = req.query, source = query.source, type = query.type;
+
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect()
+
+        let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: source });
+
+        if (result) {
+            delete result._id;
+            
+            const keys = Object.keys(result);
+
+            for (let key in keys) {
+                if (keys[key] === type) {
+                    return res.json(result[keys[key]]);
+                }
+            }
+            throw new Error('not found according to the type('+type+')');
+        } else {
+            throw new Error('not found according to the source('+source+')');
+        }
+    } catch (e) {
+        console.error(e.stack);
+        res.json({});
     } finally {
         await client.close()
     }
@@ -705,41 +743,44 @@ async function insert(req, res) {
     }
 }
 
-async function insertCanvasInfo(req, res) {
+async function addCanvasInfo(req, res) {
     const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    const query = req.query, source = query.source, type = query.type;
 
     req.accepts('application/json');
-    const query = req.body
+    const body = req.body;
 
     try {
         // Connect to the MongoDB cluster
         await client.connect()
 
-        let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: query['source'] });
-
-        let json = {
-            "_id" : query.source,
-            "cv" :  {
-                "ff" : query.ff,
-                "fs" : query.fs,
-                "pt" : query.pt,
-                "pl" : query.pl,
-                "pr" : query.pr
-            }   
+        let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: source });
+        let o = {
+            "ff" : body.ff,
+            "fs" : body.fs,
+            "pt" : body.pt,
+            "pl" : body.pl,
+            "pr" : body.pr
         }
 
         if (result) {
-            await replaceListing(client, json, CANVAS_COLLECTION);
+            result[type] = o;
+            await replaceListing(client, result, CANVAS_COLLECTION);
+            delete result._id;
+            res.json(Object.keys(result));
         } else {
-            console.log('[IST CV CREATE}')
+            let json = {
+                _id : source,
+            }
+            json[type] = o
             await createListing(client, json, CANVAS_COLLECTION);
+            delete result._id;
+            res.json([`${type}`]);
         }
-
-        res.json({res:'complete'});
     } catch (e) {
         console.error(e)
-        res.json({res:e})
+        res.json([])
     } finally {
         await client.close()
     }
@@ -747,8 +788,9 @@ async function insertCanvasInfo(req, res) {
 
 // DB Transaction
 app.post('/api/insert', (req, res) => insert(req, res));
-app.post('/api/insertCanvasInfo', (req, res) => insertCanvasInfo(req, res));
+app.post('/api/addCanvasInfo', (req, res) => addCanvasInfo(req, res));
 
+app.get('/api/getCanvasType', (req, res) => getCanvasType(req, res));
 app.get('/api/getCanvasInfo', (req, res) => getCanvasInfo(req, res));
 app.get('/api/getWdInfo', (req, res) => getWdInfo(req, res));
 app.get('/api/getStrtInfo', (req, res) => getStrtInfo(req, res));

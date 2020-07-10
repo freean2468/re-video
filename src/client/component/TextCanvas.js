@@ -17,16 +17,20 @@ export default class TextCanvas extends Component {
 
         this.ctx = null;
 
-        this.handleClickInsert = this.handleClickInsert.bind(this);
-        this.handleClickLoad = this.handleClickLoad.bind(this);
+        this.handleClickAdd = this.handleClickAdd.bind(this);
         this.handleOnMouseDown = this.handleOnMouseDown.bind(this);
+        this.handleOnChangeOnSelect = this.handleOnChangeOnSelect.bind(this);
+
         this.updateCanvasInfo = props.updateCanvasInfo.bind(this);
+        this.updateCanvasItself = props.updateCanvasItself.bind(this);
+        this.updateCvTypeList = props.updateCvTypeList.bind(this);
     }
 
     initiateDisplay() {
         let scrt = [];
         let stc = this.props.t.stc;
 
+        // display
         for (let j = 0; j < stc.length; ++j) {
             let ct = stc[j].ct,
                 wd = stc[j].wd,
@@ -76,17 +80,9 @@ export default class TextCanvas extends Component {
 
         this.setState({scrt:scrt});
 
-        if (this.props.cv === undefined) {
-            fetch(`/api/getCanvasInfo?source=${this.props.source}`)
-                .then(res => res.json())
-                .then(res => {
-                    this.handleChange('pt', res.cv.pt);
-                    this.handleChange('pl', res.cv.pl);
-                    this.handleChange('pr', res.cv.pr);
-                    this.handleChange('fs', res.cv.fs);
-                    this.handleChange('ff', res.cv.ff);
-                })
-        }
+        // type
+        console.log(this.props.cv.type);
+        this.handleOnChangeOnSelect(this.props.cv.type);
     }
 
     componentDidMount() {
@@ -104,7 +100,9 @@ export default class TextCanvas extends Component {
     }
 
     componentDidUpdate(prevProps) {
+        // console.log('TextCanvas Did Update');
         if (prevProps.t.stc !== this.props.t.stc) {
+            // console.log('TextCanvas Did Update Inside');
             this.initiateDisplay();
         }
     }
@@ -118,29 +116,18 @@ export default class TextCanvas extends Component {
         this.updateCanvasInfo(key, item);
     }
 
-    handleClickLoad() {
-        fetch(`/api/getCanvasInfo?source=${this.props.source}`)
-            .then(res => res.json())
-            .then(res => {
-                this.handleChange('pt', res.cv.pt);
-                this.handleChange('pl', res.cv.pl);
-                this.handleChange('pr', res.cv.pr);
-                this.handleChange('fs', res.cv.fs);
-                this.handleChange('ff', res.cv.ff);
-            })
-    }
-
-    handleClickInsert() {
+    handleClickAdd() {
         let json = this.props.cv;
-        json['source'] = this.props.source;
 
-        fetch('/api/insertCanvasInfo', {
+        fetch(`/api/addCanvasInfo?source=${this.props.source}&type=${this.props.cv.type}`, {
             method: 'POST',
             body: JSON.stringify(json),
             headers: {"Content-Type": "application/json"}
-          })
-          .then(res => res.json())
-          .then(res => console.log('[IST CV RES] ',res.res))
+        })
+        .then(res => res.json())
+        .then(res => {
+            this.updateCvTypeList(res);
+        })
     }
 
     handleOnMouseDown(e){
@@ -158,16 +145,16 @@ export default class TextCanvas extends Component {
         this.setState({x:x, y:y});
     }
 
-    render() {
-        let pt = 0, pl = 0, pr = 0, fs = 0, ff='';
-        if (this.props.cv) {
-            if (this.props.cv.pt) pt = this.props.cv.pt
-            if (this.props.cv.pl) pl = this.props.cv.pl
-            if (this.props.cv.pr) pr = this.props.cv.pr
-            if (this.props.cv.fs) fs = this.props.cv.fs
-            if (this.props.cv.ff) ff = this.props.cv.ff
-        }
+    handleOnChangeOnSelect(value) {
+        fetch(`/api/getCanvasInfo?source=${this.props.source}&type=${value}`)
+        .then(res => res.json())
+        .then(res => {
+            res.type = value;
+            this.updateCanvasItself(res);
+        });
+    }
 
+    render() {
         return (
             <>
                 <canvas className="TextCanvas" onMouseDown={this.handleOnMouseDown} ref={this.canvasRef}
@@ -176,41 +163,52 @@ export default class TextCanvas extends Component {
                     style={{
                         width:`${this.props.width}px`,
                         height:`${this.props.height}px`,
-                        fontSize:`${fs*this.props.width/1920*0.5625}px`,
-                        fontFamily:`${ff}`,
-                        paddingLeft:`${pl}%`,
-                        paddingRight:`${pr}%`,
-                        paddingTop:`${pt}%`,
+                        fontSize:`${this.props.cv.fs*this.props.width/1920*0.5625}px`,
+                        fontFamily:`${this.props.cv.ff}`,
+                        paddingLeft:`${this.props.cv.pl}%`,
+                        paddingRight:`${this.props.cv.pr}%`,
+                        paddingTop:`${this.props.cv.pt}%`,
                     }}
                 >
                     {this.state.scrt.map((token)=>token)}
                 </div>
                 <span className="CanvasOptions">
-                    (x: {this.state.x}%, y: {this.state.y}%)
+                    type: 
+                    <input value={this.props.cv.type}
+                        onChange={(e) => this.handleChange('type', e.target.value)}
+                    />
+                    typeList:
+                    <select defaultValue={this.props.cv.type} onChange={(e)=>this.handleOnChangeOnSelect(e.target.value)}>
+                        {this.props.cvTypeList.map((item) => 
+                            <option key={item} value={item}>{item}</option>
+                        )}
+                    </select>
+                    (x: {this.state.x}%, y: {this.state.y}%) 
                     <br></br>
-                    pt: <input value={pt}
+                    pt: <input value={this.props.cv.pt}
+                            type="number"
                             onChange={(e) => this.handleChange('pt', e.target.value)}
                         />%
-                    pl: <input value={pl}
+                    pl: <input value={this.props.cv.pl}
+                            type="number"
                             onChange={(e) => this.handleChange('pl', e.target.value)}
                         />%
-                    pr: <input value={pr}
+                    pr: <input value={this.props.cv.pr}
+                            type="number"
                             onChange={(e) => this.handleChange('pr', e.target.value)}
                         />%
                     <br></br>
-                    fs: <input value={fs}
+                    fs: <input value={this.props.cv.fs}
+                            type="number"
                             onChange={(e) => this.handleChange('fs', e.target.value)}
                         />
-                    ff: <select value={ff} onChange={(e) => this.handleChange('ff', e.target.value)}>
+                    ff: <select value={this.props.cv.ff} onChange={(e) => this.handleChange('ff', e.target.value)}>
                             <option value="PT Sans, sans-serif">PT Sans, sans-serif</option>
                             <option value="sth">sth</option>
                         </select>
                     <br></br>
-                    <button onClick={this.handleClickInsert}>
-                        Insert canvas info
-                    </button>
-                    <button onClick={this.handleClickLoad}>
-                        Load canvas info
+                    <button onClick={this.handleClickAdd}>
+                        Add canvas info
                     </button>
                 </span>
             </>

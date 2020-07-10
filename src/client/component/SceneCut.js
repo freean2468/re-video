@@ -39,8 +39,9 @@ class SnapshotImg extends Component {
   componentDidUpdate(prevProps, prevState, snapshot) {
     const that = this;
     // console.log('prevProps : (' + prevProps.videoInfo.file + ') prevState : (' + prevState.fileName + ')');
-
+    // console.log('SceneCut Did Update');
     if (prevProps.videoInfo.file !== prevState.fileName) {
+      // console.log('SceneCut Did Update inside');
       if (prevProps.videoInfo.file === '') {
         this.setState({
           fileName : prevProps.videoInfo.file,
@@ -124,9 +125,11 @@ export default class SceneCut extends Component {
 
       this.updateTextInfo = this.updateTextInfo.bind(this);
       this.updateCanvasInfo = this.updateCanvasInfo.bind(this);
+      this.updateCanvasItself = this.updateCanvasItself.bind(this);
   
       this.insert = props.insert.bind(this);
       this.updateSceneCut = props.updateSceneCut.bind(this);
+      this.updateCvTypeList = props.updateCvTypeList.bind(this);
     }
     handleChange(key, value){
       let item = this.props.cut;
@@ -153,6 +156,10 @@ export default class SceneCut extends Component {
       item[key] = value;
       this.handleChange('cv', item);
     }
+
+    updateCanvasItself(item) {
+      this.handleChange('cv', item);
+    }
   
     render() {
       let st = 'st', et = 'et', lt = 'lt', pp = 'pp'
@@ -175,7 +182,10 @@ export default class SceneCut extends Component {
               t={this.props.cut.t}
               idx={this.props.idx}
               source={this.props.videoInfo.source}
+              cvTypeList={this.props.cvTypeList}
               updateCanvasInfo={this.updateCanvasInfo}
+              updateCanvasItself={this.updateCanvasItself}
+              updateCvTypeList={this.updateCvTypeList}
               width={this.state.width}
               height={this.state.height}
             />
