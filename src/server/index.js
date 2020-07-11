@@ -131,7 +131,7 @@ function getSourceList(res) {
     res.json(json);
 }
 
-function getNavList(res) {
+function getNav(res) {
     const folderList = fs.readdirSync(VIDEO_ARCHIVE_PATH);
     let responseData = {};
 
@@ -157,7 +157,7 @@ function getNavList(res) {
         })
     )
 
-    // console.log(responseData);
+    console.log(responseData);
 
     res.send(responseData)
 }
@@ -805,7 +805,7 @@ app.get('/api/parseStc', (req, res) => parseStc(req, res));
 // File
 app.get('/api/getSnapshot', (req, res) => getSnapshot(req, res));
 app.get('/api/getAudio', (req, res) => getAudio(req, res));
-app.get('/api/getNavList', (req, res) => getNavList(res));
+app.get('/api/getNav', (req, res) => getNav(res));
 app.get('/api/getFile', (req, res) => getFile(req, res));
 app.get('/api/getSourceList', (req, res) => getSourceList(res));
 

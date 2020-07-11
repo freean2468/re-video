@@ -51,7 +51,7 @@
     margin-left:2px;
 }
 
-.Nav .ListItem .List {
+.Nav .NavItem .Item {
     white-space: nowrap;
     overflow:hidden;
     text-overflow:ellipsis;

@@ -8,15 +8,6 @@ export default class VideoInfo extends Component {
     */
     constructor(props) {
       super(props)
-      this.state = {
-        sourceList : [],
-        audioBuffer : null,
-        cvTypeList : []
-      };
-
-      this.init = this.init.bind(this);
-
-      this.loadAudio = this.loadAudio.bind(this);
 
       this.handleChange = this.handleChange.bind(this);
       this.handleClickInsert = this.handleClickInsert.bind(this);
@@ -26,77 +17,6 @@ export default class VideoInfo extends Component {
       this.updateSceneCut = this.updateSceneCut.bind(this);
     }
 
-    init() {
-      this.loadAudio();
-
-      // type
-      fetch(`/api/getCanvasType?source=${this.props.videoInfo.source}`)
-      .then(res => res.json())
-      .then(res => {
-          this.setState({cvTypeList:res});
-      })
-    }
-
-    componentDidMount() {
-      fetch('/api/getSourceList')
-      .then(res => res.json())
-      .then(res => this.setState({sourceList:res.source}));
-
-      this.init();
-    }
-
-    componentDidUpdate(prevProps, prevState, snapshot) {
-      // console.log('prevProps : (' + prevProps.videoInfo.file + ') props : (' + this.props.videoInfo.file + ')');
-      // console.log('VideoInfo Did Update');
-      if (this.props.videoInfo.file !== prevProps.videoInfo.file) {
-        // console.log('VideoInfo Did Update inside');
-        this.init();
-      }
-    }
-
-    loadAudio() {
-      if (this.props.videoInfo.file !== undefined && this.props.videoInfo.file !== '') {
-        const that = this;
-        fetch(`/api/getAudio?source=${this.props.videoInfo.source}&name=${encodeURIComponent(this.props.videoInfo.file)}`)
-        .then(res => {
-          const reader = res.body.getReader();
-          let buffer = new Uint8Array(0);
-
-          function read(reader) {
-            return reader.read().then(({ done, value }) => {
-              if (done) {
-                  const arrayBuffer = buffer.buffer,
-                  audioCtx = new(window.AudioContext || window.webkitAudioContext)();
-
-                  audioCtx.decodeAudioData(arrayBuffer, function(buffer) {
-                      that.setState({ audioBuffer : buffer });
-                    },
-                    function (e) {
-                      "Error with decoding audio data" + e.error
-                    }
-                  );
-                  return null;
-              }
-
-              function concatTypedArrays(a, b) { // a, b TypedArray of same type
-                var c = new (a.constructor)(a.length + b.length);
-                c.set(a, 0);
-                c.set(b, a.length);
-                return c;
-              }
-              buffer = concatTypedArrays(buffer, value);
-
-              return read(reader);
-            });
-          };
-
-          return read(reader);
-        });
-      } else {
-        this.setState({ audioBuffer:null });
-      }
-    }
-  
     handleChange(key, value) {
       let item = this.props.videoInfo
       item[key] = value
