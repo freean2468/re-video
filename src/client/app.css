@@ -27,3 +27,39 @@ button { background-color : black; color:white; border-radius:20px; border:0px}
   display: flex;
   flex-direction: row;
 }
+
+.VideoInfo { width : 90vw; }
+.VideoInfo input { margin-right : 10px; }
+.VideoInfo .MarginRight { margin-right : 10px; }
+
+.SceneCut { border: black 2px solid; margin: 5px 5px}
+
+.TextInfo { width: inherit; }
+.TextInfo .Scrt { width : calc(100vw - 220px); }
+.TextInfo .Stc { margin-left : 40px; border: #666 2px solid; }
+.TextInfo .StcToken { border : gold 2px solid; margin: 1px 1px}
+.TextInfo .StcToken .Ct, 
+.TextInfo .StcToken .Pp,
+.TextInfo .StcToken .Lt { width : calc(100vw - 270px); }
+
+.TextInfo .StcToken table {
+  border-collapse: collapse;
+  /* border-spacing: 0.2em 0; */
+}
+
+.TextInfo .StcToken td {
+  text-align:center;
+  border: 0.001em solid RGB(255,255,255,0.5);
+  padding: 0 0.1em;
+  font-size:0.7em;
+}
+
+.TextInfo .StcToken .StrtToken { margin-left : 40px; border : darkcyan 2px solid;}
+.TextInfo .StcToken .WdToken { margin-left : 40px; border : darkcyan 2px solid;}
+.TextInfo .StcToken .WdToken .Toggler {margin-right:10px;}
+.TextInfo .StcToken .WdToken .St,
+.TextInfo .StcToken .WdToken .Dp,
+.TextInfo .StcToken .WdToken .Ct,
+.TextInfo .StcToken .WdToken .Rt,
+.TextInfo .StcToken .WdToken .Lt,
+.TextInfo .StcToken .WdToken .LtList { margin-right:10px; width : 100px }

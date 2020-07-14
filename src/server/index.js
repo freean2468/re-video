@@ -216,16 +216,13 @@ async function getCanvasInfo(req, res) {
         let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: source });
 
         if (result) {
-            delete result._id;
-            
-            const keys = Object.keys(result);
+            let item = result[type];
 
-            for (let key in keys) {
-                if (keys[key] === type) {
-                    return res.json(result[keys[key]]);
-                }
-            }
-            throw new Error('not found according to the type('+type+')');
+            if (!item) throw new Error('not found according to the type('+type+')');
+
+            item['type'] = type;
+
+            return res.json(item);
         } else {
             throw new Error('not found according to the source('+source+')');
         }

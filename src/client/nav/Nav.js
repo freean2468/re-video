@@ -10,11 +10,9 @@ export default function Nav(props) {
       e.preventDefault();
       e.stopPropagation();
       fetch(`/api/getFile?fileName=${encodeURIComponent(fileName)}
-      &folder=${encodeURIComponent(folder)}`)
+            &folder=${encodeURIComponent(folder)}`)
       .then(res => res.json())
-      .then(file => {
-        props.init(file, folder);
-      });
+      .then(file => props.init(file, folder));
   }
 
   return (
@@ -48,9 +46,7 @@ function useNav() {
   useEffect(()=>{
     fetch('/api/getNav')
     .then(res => res.json())
-    .then(list => {
-      setValue(list);
-    });
+    .then(list => setValue(list));
   },[])
 
   return {
@@ -62,11 +58,8 @@ function useSelected() {
   const [value, setValue] = useState('');
 
   function handleClick(key) {
-    if (value === key) {
-      setValue(null);
-    } else {
-      setValue(key);
-    }
+    if (value === key) setValue(null);
+    else setValue(key);
   };
 
   return {
