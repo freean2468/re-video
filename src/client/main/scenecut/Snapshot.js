@@ -12,6 +12,7 @@ function useSnapshot(source, file, time, size) {
     const [value, setValue] = useState(null);
 
     useEffect(() => {
+        if (source === '' || file === '') return;
         fetch(`/api/getSnapshot?source=${source}
                 &name=${encodeURIComponent(file)}&t=${time}
                 &size=${size.width}x${size.height}`)

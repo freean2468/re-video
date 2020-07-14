@@ -23,7 +23,7 @@ function Main(props) {
         </span>
         <span className="MarginRight">
           file : {props.data.data.file}
-          <input type="file" onChange={(e)=>props.data.handleChange('file', e.target.value)}/>
+          <input type="file" onChange={(e)=>props.data.handleChangeFile(e)}/>
         </span>
         <div>
           {props.data.data.c.map((c, idx) => 
@@ -81,11 +81,25 @@ function useData() {
   const cvTypeList = useCvTypeList(data.source);
 
   function init(_value, _path) {
+    // exception handling codes
     _value.c.map((c, idx) => {
-      c.t.stc.map((stc, _idx) => {
-        if (!stc.strt) _value.c[idx].t.stc[_idx].strt=[];
-      })
-    })
+      if (c) {
+        if (c.t) {
+          if (c.t.stc) {
+            c.t.stc.map((stc, _idx) => {
+              if (!stc.strt) _value.c[idx].t.stc[_idx].strt=[];
+            });
+          } else {
+            c.cv = {};
+            c.t.stc = [];
+          } 
+        }
+      }
+    });
+
+    _value.link=_value.link||'';
+    //
+
     setData(_value);
     setPath(_path);
   };
@@ -107,6 +121,14 @@ function useData() {
     });
   };
 
+  function handleChangeFile(e) {
+    var fileName = e.target.files[0].name;
+    let idx = fileName.lastIndexOf('.');
+    fileName = fileName.slice(0, idx);
+    console.log(fileName);
+    handleChange('file', fileName);
+  }
+
   return {
     data,
     path,
@@ -117,7 +139,8 @@ function useData() {
     setData,
     init,
     insert,
-    handleChange
+    handleChange,
+    handleChangeFile
   };
 }
 
