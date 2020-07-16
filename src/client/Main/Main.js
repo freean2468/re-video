@@ -18,7 +18,7 @@ function Main(props) {
                           onChange={(e)=>props.data.handleChange('source', e.target.value)}/>
           <select value={props.data.data.source} 
                   onChange={(e)=>props.data.handleChange('source', e.target.value)}>
-            {props.data.sourceList.value.map((item, idx) => <option key={idx} value={idx}>{item}</option>)}
+            {Object.keys(props.data.sourceList.value).map((key, idx) => <option key={idx} value={key}>{props.data.sourceList.value[key]}</option>)}
           </select>
         </span>
         <span className="MarginRight">
@@ -34,7 +34,8 @@ function Main(props) {
           }
         </div>
         <div>
-          <button onClick={props.data.insert} >Insert</button>
+          <button onClick={props.data.insertToPilot} >Insert to Pilot</button>
+          <button onClick={props.data.insertToProduct} >Insert to Product</button>
         </div>
         <div>
           {/* this takes too much time to draw.
@@ -104,8 +105,18 @@ function useData() {
     setPath(_path);
   };
 
-  function insert() {
-    fetch(`/api/insert?folder=${path}`, {
+  function insertToPilot() {
+    fetch(`/api/insert?db=${1}&folder=${path}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {"Content-Type": "application/json"}
+    })
+    .then(res => res.json())
+    .then(res => console.log('[INSERT RES] ',res.res));
+  };
+
+  function insertToProduct() {
+    fetch(`/api/insert?db=${0}&folder=${path}`, {
       method: 'POST',
       body: JSON.stringify(data),
       headers: {"Content-Type": "application/json"}
@@ -138,7 +149,8 @@ function useData() {
 
     setData,
     init,
-    insert,
+    insertToPilot,
+    insertToProduct,
     handleChange,
     handleChangeFile
   };
@@ -201,7 +213,7 @@ function useAudioBuffer(source, file) {
 }
 
 function useSourceList() {
-  const [value, setValue] = useState([]);
+  const [value, setValue] = useState({});
 
   useEffect(() => {
     init();
@@ -210,7 +222,7 @@ function useSourceList() {
   function init() {
     fetch('/api/getSourceList')
     .then(res => res.json())
-    .then(res => setValue(res.source));
+    .then(res => setValue(res));
   };
 
   return {

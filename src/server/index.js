@@ -19,19 +19,13 @@ var ffmpeg = require('fluent-ffmpeg');
 app.use(express.json({limit: '50mb'}));
 // app.use(express.urlencoded({limit: '50mb'}));
 
-const DATABASE_NAME = "sensebe_dictionary"
-const VIDEO_ARCHIVE_PATH = "collections/SB_VIDEO"
-const VIDEO_DELETED_PATH = "collections/SB_VIDEO_DELETED"
+const VIDEO_ARCHIVE_PATH = "collections/SB_VIDEO";
 
-const VIDEO_COLLECTION = "SB_VIDEO"
-const ENG_BASE_COLLECTION = "SB_ENG_BASE"
-const CANVAS_COLLECTION = "SB_CANVAS"
+// custom
+const Enum = require('./enum');
+const ENUM = new Enum();
+ENUM.initialize();
 
-// lists
-const LIST_OF_WORD = "list_word.json"
-const LIST_OF_SOURCE = "list_source.json"
-
-const PASSWORD = fs.readFileSync("./pw.txt", "utf8");
 
 function getSnapshot(req, res) {
     const name = req.query.name.trim(), source = req.query.source.trim(), t = req.query.t.trim(), 
@@ -124,11 +118,7 @@ function getAudio(req, res) {
 }
 
 function getSourceList(res) {
-    const json = JSON.parse(fs.readFileSync(LIST_OF_SOURCE, 'utf-8'));
-
-    fs.writeFileSync(path.join('../re-sensebe', LIST_OF_SOURCE), JSON.stringify(json, null, "\t"), "utf-8");
-
-    res.json(json);
+    res.json(ENUM.SOURCE);
 }
 
 function getNav(res) {
@@ -180,15 +170,14 @@ function tokenizeStc(req, res) {
 }
 
 async function getCanvasType(req, res) {
-    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true })
     const query = req.query, source = query.source;
 
     try {
         // Connect to the MongoDB cluster
         await client.connect()
 
-        let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: source });
+        let result = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.CANVAS).findOne({ _id: source });
 
         if (result) {
             delete result._id
@@ -205,15 +194,14 @@ async function getCanvasType(req, res) {
 }
 
 async function getCanvasInfo(req, res) {
-    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true })
     const query = req.query, source = query.source, type = query.type;
 
     try {
         // Connect to the MongoDB cluster
         await client.connect()
 
-        let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: source });
+        let result = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.CANVAS).findOne({ _id: source });
 
         if (result) {
             let item = result[type];
@@ -235,15 +223,14 @@ async function getCanvasInfo(req, res) {
 }
 
 async function getWdInfo(req, res) {
-    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true })
     const query = req.query, ct = query.ct;
     
     try {
         // Connect to the MongoDB cluster
         await client.connect()
 
-        let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({ _id: ct.hashCode() });
+        let result = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.ENG_BASE).findOne({ _id: ct.hashCode() });
 
         if (result) {
             let list = [];
@@ -267,15 +254,14 @@ async function getWdInfo(req, res) {
 }
 
 async function getStrtInfo(req, res) {
-    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true })
     const query = req.query, rt = query.rt;
     
     try {
         // Connect to the MongoDB cluster
         await client.connect()
 
-        let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({ _id: rt.hashCode() });
+        let result = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.ENG_BASE).findOne({ _id: rt.hashCode() });
         let list = [];
 
         if (result) {
@@ -296,18 +282,17 @@ async function getStrtInfo(req, res) {
 }
 
 // async function deleteVideo(req, res) {
-//     const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`;
-//     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+//     const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true });
 //     const query = req.query, id = query.id.trim(), folder = query.folder;
 
 //     try {
 //         // Connect to the MongoDB cluster
 //         await client.connect();
 
-//         let result = await client.db(DATABASE_NAME).collection(VIDEO_COLLECTION).findOne({ _id: id });
+//         let result = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.VIDEO).findOne({ _id: id });
 
 //         if (result) {
-//             result = await client.db(DATABASE_NAME).collection(VIDEO_COLLECTION).deleteOne({ _id: id });
+//             result = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.VIDEO).deleteOne({ _id: id });
 //             if (result.result.n != 1) {
 //                 throw new Error(result.result.n);
 //             }
@@ -334,8 +319,7 @@ async function getStrtInfo(req, res) {
 // }
 
 async function deleteWdBase(req, res) {
-    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`;
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true });
     const query = req.query, 
         ct = query.ct.trim(), lt = query.lt.trim(), link = query.link.trim(),
         c = query.c.trim(), stc = query.stc.trim(), wd = query.wd.trim();
@@ -344,7 +328,7 @@ async function deleteWdBase(req, res) {
         // Connect to the MongoDB cluster
         await client.connect();
 
-        const result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({ 
+        const result = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.ENG_BASE).findOne({ 
             _id: ct.hashCode(),
             rt:ct,
             'wd_m.lt': lt
@@ -359,7 +343,7 @@ async function deleteWdBase(req, res) {
             for (let i = 0; i < result.wd_m.length; ++i) {
                 if (result.wd_m[i].lt === lt) {
                     if (result.wd_m[i].lk.length <= 1) {
-                        const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne({ 
+                        const test = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.ENG_BASE).updateOne({ 
                             _id: ct.hashCode(),
                             rt:ct,
                             'wd_m.lt': lt,
@@ -382,7 +366,7 @@ async function deleteWdBase(req, res) {
                         for (let j = 0; j < result.wd_m[i].lk.length; ++j) {
                             if (result.wd_m[i].lk[j].link.trim() == link.trim() && result.wd_m[i].lk[j].pos.c == c
                                     && result.wd_m[i].lk[j].pos.stc == stc && result.wd_m[i].lk[j].pos.wd == wd) {
-                                const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne({ 
+                                const test = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.ENG_BASE).updateOne({ 
                                     _id: ct.hashCode(),
                                     rt:ct,
                                     'wd_m.lt': lt,
@@ -424,8 +408,7 @@ async function deleteWdBase(req, res) {
 }
 
 async function deleteStrtFromBase(req, res) {
-    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`;
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true });
     const query = req.query, rt = query.rt.trim(), t = query.t.trim(), link = query.link.trim(),
         c = query.c.trim(), stc = query.stc.trim();
 
@@ -437,7 +420,7 @@ async function deleteStrtFromBase(req, res) {
         // Connect to the MongoDB cluster
         await client.connect();
 
-        const result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({ 
+        const result = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.ENG_BASE).findOne({ 
             _id: rt.hashCode(),
             rt:rt,
             'strt_m.t': t
@@ -447,7 +430,7 @@ async function deleteStrtFromBase(req, res) {
             for (let i = 0; i < result.strt_m.length; ++i) {
                 if (result.strt_m[i].t === t) {
                     if (result.strt_m[i].lk.length <= 1) {
-                        const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne({ 
+                        const test = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.ENG_BASE).updateOne({ 
                             _id: rt.hashCode(),
                             rt:rt,
                             'strt_m.t': t,
@@ -469,7 +452,7 @@ async function deleteStrtFromBase(req, res) {
                         for (let j = 0; j < result.strt_m[i].lk.length; ++j) {
                             if (result.strt_m[i].lk[j].link == link && result.strt_m[i].lk[j].pos.c == c
                                     && result.strt_m[i].lk[j].pos.stc == stc) {
-                                const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne({ 
+                                const test = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.ENG_BASE).updateOne({ 
                                     _id: rt.hashCode(),
                                     rt:rt,
                                     'strt_m.t': t,
@@ -509,11 +492,12 @@ async function deleteStrtFromBase(req, res) {
 }
 
 async function insert(req, res) {
-    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true })
 
     req.accepts('application/json');
-    const query = req.body, folder = req.query.folder;
+    const query = req.body, folder = req.query.folder, db = parseInt(req.query.db);
+
+    db = ENUM.getDB(db);
 
     try {
         // Connect to the MongoDB cluster
@@ -525,22 +509,20 @@ async function insert(req, res) {
         query['_id'] = _id;
         
         // SB_VIDEO ISNERT
-        result = await client.db(DATABASE_NAME).collection(VIDEO_COLLECTION).findOne({ _id: _id });
+        result = await client.db(db).collection(ENUM.COL.VIDEO).findOne({ _id: _id });
             
         if (result) {
-            await replaceListing(client, query, VIDEO_COLLECTION);
+            await replaceListing(client, query, ENUM.COL.VIDEO);
             console.log('[VIDEO_REPLACE_LISTING] _id : ',_id);
         } else {
             console.log('[VIDEO_CREATE_LISTING] _id : ', _id);
-            await createListing(client, query, VIDEO_COLLECTION);
+            await createListing(client, query, ENUM.COL.VIDEO);
         }
 
         delete query._id;
         fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH, folder, _id+'.json'), JSON.stringify(query, null, "\t"), "utf-8")
 
         // INSERT into SB_ENG_BASE  
-        let wordList = JSON.parse(fs.readFileSync(LIST_OF_WORD, "utf8"));
-
         for (let i = 0; i < query['c'].length; ++i) {
             let stc = query['c'][i]['t']['stc']
 
@@ -549,79 +531,12 @@ async function insert(req, res) {
                     let wd = stc[j]['wd'], strt = stc[j]['strt'];
 
                     if (wd) {
-
-                        async function insertBase(listing, hashId) {
-                            let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({_id:hashId});
-
-                            if (result === null) {
-                                await createListing(client, listing, ENG_BASE_COLLECTION);
-                            } else {
-                                let second = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
-                                    _id:listing._id,
-                                    rt:listing.rt,
-                                    'wd_m.lt': listing.wd_m[0].lt
-                                });
-
-                                if (second === null) {
-                                    let third = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
-                                        _id:listing._id,
-                                        rt:listing.rt,
-                                        'wd_m.lt': listing.wd_m[0].lt,
-                                        'wd_m.lk.vid': listing.wd_m[0].lk[0].vid,
-                                        'wd_m.lk.c': listing.wd_m[0].lk[0].c,
-                                        'wd_m.lk.stc': listing.wd_m[0].lk[0].stc,
-                                        'wd_m.lk.wd': listing.wd_m[0].lk[0].wd
-                                    });
-
-                                    if (third === null) {
-                                        const wd_m = listing.wd_m[0], lk=wd_m.lk[0];
-                                        if (result.wd_m.length === 0) {
-                                            const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
-                                                { _id: result._id },
-                                                { $push: { 'wd_m': wd_m } }
-                                            );
-                                            if (test.result.nModified !== 1) {
-                                                throw new Error(test.result.nModified)
-                                            }
-                                        } else {
-                                            let isExist = false;
-                                            for (let l = 0; l < result.wd_m.length; ++l) {
-                                                if (result.wd_m[l].lt === wd_m.lt) {
-                                                    const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
-                                                        { _id: result._id, 'wd_m.lt':wd_m.lt },
-                                                        { $push:{ 'wd_m.$.lk': lk } }
-                                                    );
-                                                    if (test.result.nModified !== 1) {
-                                                        throw new Error(test.result.nModified)
-                                                    }
-                                                    isExist = true;
-                                                    break;
-                                                }
-                                            }
-                                            if (!isExist) {
-                                                const test = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
-                                                    { _id: result._id },
-                                                    { $push: { 'wd_m': wd_m } }
-                                                );
-                                                if (test.result.nModified !== 1) {
-                                                    throw new Error(test.result.nModified)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                         for (let k = 0; k < wd.length; ++k) {
                             const data = wd[k], ct = data['ct'].toLowerCase();
                             let rt = undefined;
 
-                            if (data['rt']) {
-                                rt = data['rt'].toLowerCase();
-                            } else {
-                                rt = ct;
-                            }
+                            if (data['rt']) rt = data['rt'].toLowerCase();
+                            else rt = ct;
                             
                             // firstly, insert ct listing into base collection
                             const ctListing = { 
@@ -639,11 +554,8 @@ async function insert(req, res) {
                                 }],
                                 strt_m:[]
                             };
-                            await insertBase(ctListing, ct.hashCode());
-                            
-                            if (wordList[ct] === undefined) {
-                                wordList[ct] = ct.hashCode();
-                            }
+                            await insertWdIntoBase(client, db, ENUM.COL.ENG_BASE, ctListing, ct.hashCode());
+                            await insertWdIntoList(client, db, ENUM.COL.ENG_LIST, ct);
 
                             // then rt
                             if (ct !== rt) {
@@ -662,27 +574,13 @@ async function insert(req, res) {
                                     }],
                                     strt_m:[]
                                 };
-                                await insertBase(rtListing, rt.hashCode());
-
-                                if (wordList[rt] === undefined) {
-                                    wordList[rt] = rt.hashCode();
-                                }
+                                await insertWdIntoBase(client, db, ENUM.COL.ENG_BASE, rtListing, rt.hashCode());
+                                await insertWdIntoList(client, db, ENUM.COL.ENG_LIST, rt);
                             }
                         }
                     }
 
                     if (strt) {
-
-                        async function insertStrt(strt, id) {
-                            const result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).updateOne(
-                                { _id: id },
-                                { $push: { 'strt_m': strt } }
-                            );
-                            if (result.result.nModified !== 1) {
-                                throw new Error(result.result.nModified)
-                            }
-                        }
-
                         for (let k = 0; k < strt.length; ++k) {
                             for (let l = 0; l < strt[k].rt.length; ++l) {
                                 const rt = strt[k].rt[l],
@@ -698,14 +596,14 @@ async function insert(req, res) {
                                         }]
                                     };
 
-                                let result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne(
+                                let result = await client.db(db).collection(ENUM.COL.ENG_BASE).findOne(
                                     { _id: rt.hashCode() }
                                 );
 
                                 if (result.strt_m.length === 0) {
-                                    await insertStrt(strt_m, rt.hashCode());
+                                    await insertStrt(client, db, strt_m, rt.hashCode());
                                 } else {
-                                    result = await client.db(DATABASE_NAME).collection(ENG_BASE_COLLECTION).findOne({
+                                    result = await client.db(db).collection(ENUM.COL.ENG_BASE).findOne({
                                         _id: rt.hashCode(),
                                         'strt_m.t':strt_m.t,
                                         'strt_m.usg':strt_m.usg,
@@ -716,7 +614,7 @@ async function insert(req, res) {
                                     });
 
                                     if (result === null) {
-                                        await insertStrt(strt_m, rt.hashCode());
+                                        await insertStrt(client, db, strt_m, rt.hashCode());
                                     }
                                 }
                             }
@@ -726,10 +624,61 @@ async function insert(req, res) {
             }
         }
 
+        // How to notice Product Server to update the WORD_LIST?
         // to re-video
-        fs.writeFileSync(LIST_OF_WORD, JSON.stringify(wordList, null, "\t"), "utf-8");
+        // fs.writeFileSync(LIST_OF_WORD, JSON.stringify(wordList, null, "\t"), "utf-8");
         // to re-sensebe
-        fs.writeFileSync(path.join('../re-sensebe', LIST_OF_WORD), JSON.stringify(wordList, null, "\t"), "utf-8");
+        // fs.writeFileSync(path.join('../re-sensebe', LIST_OF_WORD), JSON.stringify(wordList, null, "\t"), "utf-8");
+
+        res.json({res:'complete'});
+    } catch (e) {
+        console.error(e.stack);
+        res.json({res:e});
+    } finally {
+        await client.close()
+    }
+}
+
+async function insertWdToPilot(req, res) {
+    const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true })
+
+    req.accepts('application/json');
+    const query = req.query, ct = query.ct, lt = query.lt, vid = query.link, db = query.db,
+        c = parseInt(query.c), stc = parseInt(query.stc), wd = parseInt(query.wd);
+
+    db = ENUM.getDB(db);
+
+    console.log(ct);
+    console.log(lt);
+    console.log(vid);
+    console.log(c);
+    console.log(stc);
+    console.log(wd);
+    
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect()
+
+        let result = undefined
+
+        // INSERT into SB_ENG_BASE  
+        const ctListing = { 
+            _id: ct.hashCode(), 
+            rt: ct,
+            wd_m: [{  
+                lt: lt,
+                lk:[{
+                    vid:vid,
+                    date:new Date().toLocaleString(),
+                    c:c,
+                    stc:stc,
+                    wd:wd
+                }]
+            }],
+            strt_m:[]
+        };
+        await insertWdIntoBase(client, db, ENUM.COL.ENG_BASE, ctListing, ct.hashCode());
+        await insertWdIntoList(client, db, ENUM.COL.ENG_LIST, ct);
 
         res.json({res:'complete'});
     } catch (e) {
@@ -741,8 +690,7 @@ async function insert(req, res) {
 }
 
 async function addCanvasInfo(req, res) {
-    const uri = `mongodb+srv://sensebe:${PASSWORD}@agjakmdb-j9ghj.azure.mongodb.net/test`
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true })
     const query = req.query, source = query.source, type = query.type;
 
     req.accepts('application/json');
@@ -752,7 +700,7 @@ async function addCanvasInfo(req, res) {
         // Connect to the MongoDB cluster
         await client.connect()
 
-        let result = await client.db(DATABASE_NAME).collection(CANVAS_COLLECTION).findOne({ _id: source });
+        let result = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.CANVAS).findOne({ _id: source });
         let o = {
             "ff" : body.ff,
             "fs" : body.fs,
@@ -763,7 +711,7 @@ async function addCanvasInfo(req, res) {
 
         if (result) {
             result[type] = o;
-            await replaceListing(client, result, CANVAS_COLLECTION);
+            await replaceListing(client, result, ENUM.COL.CANVAS);
             delete result._id;
             res.json(Object.keys(result));
         } else {
@@ -771,7 +719,7 @@ async function addCanvasInfo(req, res) {
                 _id : source,
             }
             json[type] = o
-            await createListing(client, json, CANVAS_COLLECTION);
+            await createListing(client, json, ENUM.COL.CANVAS);
             delete result._id;
             res.json([`${type}`]);
         }
@@ -792,6 +740,8 @@ app.get('/api/getCanvasInfo', (req, res) => getCanvasInfo(req, res));
 app.get('/api/getWdInfo', (req, res) => getWdInfo(req, res));
 app.get('/api/getStrtInfo', (req, res) => getStrtInfo(req, res));
 // app.get('/api/deleteVideo', (req, res) => deleteVideo(req, res));
+
+app.get('/api/insertWdToPilot', (req, res) => insertWdToPilot(req, res));
 app.get('/api/deleteWdBase', (req, res) => deleteWdBase(req, res));
 app.get('/api/deleteStrtFromBase', (req, res) => deleteStrtFromBase(req, res));
 
@@ -806,15 +756,22 @@ app.get('/api/getNav', (req, res) => getNav(res));
 app.get('/api/getFile', (req, res) => getFile(req, res));
 app.get('/api/getSourceList', (req, res) => getSourceList(res));
 
-app.listen(process.env.PORT || 8080, () => console.log(`Listening on port ${process.env.PORT || 8080}!`));
+app.listen(process.env.PORT || 8080, () => {
+    console.log(`Listening on port ${process.env.PORT || 8080}!`);
+});
+
+
+
+
+// Functions
 
 async function createListing(client, newListing, collection){
-    const result = await client.db(DATABASE_NAME).collection(collection).insertOne(newListing);
+    const result = await client.db(ENUM.DB.PRODUCT).collection(collection).insertOne(newListing);
     console.log(`New listing created with the following id: ${result.insertedId}(${newListing.rt})`);
-}
+};
 
 async function replaceListing(client, listing, collection) {
-    result = await client.db(DATABASE_NAME).collection(collection).replaceOne({
+    result = await client.db(ENUM.DB.PRODUCT).collection(collection).replaceOne({
         _id : listing['_id']
     }, 
     {
@@ -823,7 +780,88 @@ async function replaceListing(client, listing, collection) {
     
     // console.log(`${result.matchedCount} document(s) matched the query criteria.`);
     console.log(`_id : ${listing['_id']}, for "${listing["link"]}" replaced : matchedCount(${result.matchedCount}), modiefiedCount(${result.modifiedCount})`);
-}
+};
+
+async function insertWdIntoBase(client, db, col, listing, hashId) {
+    let result = await client.db(db).collection(col).findOne({_id:hashId});
+
+    if (result === null) {
+        await createListing(client, listing, col);
+    } else {
+        let second = await client.db(db).collection(col).findOne({
+            _id:listing._id,
+            rt:listing.rt,
+            'wd_m.lt': listing.wd_m[0].lt
+        });
+
+        if (second === null) {
+            let third = await client.db(db).collection(col).findOne({
+                _id:listing._id,
+                rt:listing.rt,
+                'wd_m.lt': listing.wd_m[0].lt,
+                'wd_m.lk.vid': listing.wd_m[0].lk[0].vid,
+                'wd_m.lk.c': listing.wd_m[0].lk[0].c,
+                'wd_m.lk.stc': listing.wd_m[0].lk[0].stc,
+                'wd_m.lk.wd': listing.wd_m[0].lk[0].wd
+            });
+
+            if (third === null) {
+                const wd_m = listing.wd_m[0], lk=wd_m.lk[0];
+                if (result.wd_m.length === 0) {
+                    const test = await client.db(db).collection(col).updateOne(
+                        { _id: result._id },
+                        { $push: { 'wd_m': wd_m } }
+                    );
+                    if (test.result.nModified !== 1) {
+                        throw new Error(test.result.nModified)
+                    }
+                } else {
+                    let isExist = false;
+                    for (let l = 0; l < result.wd_m.length; ++l) {
+                        if (result.wd_m[l].lt === wd_m.lt) {
+                            const test = await client.db(db).collection(col).updateOne(
+                                { _id: result._id, 'wd_m.lt':wd_m.lt },
+                                { $push:{ 'wd_m.$.lk': lk } }
+                            );
+                            if (test.result.nModified !== 1) {
+                                throw new Error(test.result.nModified)
+                            }
+                            isExist = true;
+                            break;
+                        }
+                    }
+                    if (!isExist) {
+                        const test = await client.db(db).collection(col).updateOne(
+                            { _id: result._id },
+                            { $push: { 'wd_m': wd_m } }
+                        );
+                        if (test.result.nModified !== 1) {
+                            throw new Error(test.result.nModified)
+                        }
+                    }
+                }
+            }
+        }
+    }
+};
+
+async function insertWdIntoList(client, db, col, wd) {
+    if (ENUM.WORD[wd] === undefined) {
+        let result = await client.db(db).collection(col).insertOne({_id:wd, hash:wd.hashCode()});
+        await ENUM.updateWord();
+        console.log(result);
+    }
+};
+
+async function insertStrt(client, db, strt, id) {
+    const result = await client.db(db).collection(ENUM.COL.ENG_BASE).updateOne(
+        { _id: id },
+        { $push: { 'strt_m': strt } }
+    );
+    if (result.result.nModified !== 1) {
+        throw new Error(result.result.nModified)
+    }
+};
 
 Object.defineProperty(String.prototype, 'hashCode', {
     value: function() {

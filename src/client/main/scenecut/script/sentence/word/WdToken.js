@@ -43,20 +43,33 @@ export default function WdToken(props) {
       });
 
       fetch(`/api/deleteWdBase?ct=${getFromWd('ct')}&lt=${getFromWd('lt')}
-            &link=${encodeURIComponent(getMetadata('source')+getMetadata('file'))}
+            &link=${encodeURIComponent(getData('source')+getData('file'))}
             &c=${props.idxC}&stc=${props.idxStc}&wd=${props.idxWd}`)
-        .then(res => res.json())
-        .then(res => console.log('[deleteWdBase_CT_RES] : ', res))
+      .then(res => res.json())
+      .then(res => console.log('[deleteWdBase_CT_RES] : ', res))
 
       if (getFromWd('rt') !== '') {
         fetch(`/api/deleteWdBase?ct=${getFromWd('rt')}&lt=${getFromWd('lt')}
-              &link=${encodeURIComponent(getMetadata('source')+getMetadata('file'))}
+              &link=${encodeURIComponent(getData('source')+getData('file'))}
               &c=${props.idxC}&stc=${props.idxStc}&wd=${props.idxWd}`)
-          .then(res => res.json())
-          .then(res => console.log('[deleteWdBase_RT_RES] : ', res))
+        .then(res => res.json())
+        .then(res => console.log('[deleteWdBase_RT_RES] : ', res))
       }
     } else {
-      // this.insert();
+      fetch(`/api/insertWd?db=${1}&ct=${getFromWd('ct')}&lt=${getFromWd('lt')}
+            &link=${encodeURIComponent(getData('source')+getData('file'))}
+            &c=${props.idxC}&stc=${props.idxStc}&wd=${props.idxWd}`)
+      .then(res => res.json())
+      .then(res => console.log('[INSERT_WD(CT)_RES] ',res.res));
+
+      if (getFromWd('rt') !== '') {
+        fetch(`/api/insertWd?db=${1}&ct=${getFromWd('rt')}&lt=${getFromWd('lt')}
+              &link=${encodeURIComponent(getData('source')+getData('file'))}
+              &c=${props.idxC}&stc=${props.idxStc}&wd=${props.idxWd}`)
+        .then(res => res.json())
+        .then(res => console.log('[INSERT_WD(RT)_RES] : ', res))
+      }
+
       setLtList([]);
     }
   };

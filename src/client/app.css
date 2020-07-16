@@ -21,7 +21,7 @@ body {
 
 textarea { padding : 5px; line-height: 1.6; }
 
-button { background-color : black; color:white; border-radius:20px; border:0px}
+button { background-color : black; color:white; border-radius:20px; border:0px; padding: 4px 10px }
 
 .Wrapper {
   display: flex;
