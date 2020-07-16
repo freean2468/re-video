@@ -78,6 +78,7 @@ function useData() {
 
   const [path, setPath] = useState('');
   const sourceList = useSourceList();
+  const DBList = useDBList();
   const audioBuffer = useAudioBuffer(data.source, data.file);
   const cvTypeList = useCvTypeList(data.source);
 
@@ -106,7 +107,7 @@ function useData() {
   };
 
   function insertToPilot() {
-    fetch(`/api/insert?db=${1}&folder=${path}`, {
+    fetch(`/api/insert?db=${getMetadata('DBList').PILOT}&folder=${path}`, {
       method: 'POST',
       body: JSON.stringify(data),
       headers: {"Content-Type": "application/json"}
@@ -116,7 +117,7 @@ function useData() {
   };
 
   function insertToProduct() {
-    fetch(`/api/insert?db=${0}&folder=${path}`, {
+    fetch(`/api/insert?db=${getMetadata('DBList').PRODUCT}&folder=${path}`, {
       method: 'POST',
       body: JSON.stringify(data),
       headers: {"Content-Type": "application/json"}
@@ -144,6 +145,7 @@ function useData() {
     data,
     path,
     sourceList,
+    DBList,
     audioBuffer,
     cvTypeList,
 
@@ -228,6 +230,24 @@ function useSourceList() {
   return {
     value,
     init
+  };
+}
+
+function useDBList() {
+  const [value, setValue] = useState({});
+
+  useEffect(() => {
+    init();
+  },[]);
+
+  function init() {
+    fetch('/api/getDBList')
+    .then(res => res.json())
+    .then(res => setValue(res));
+  };
+
+  return {
+    value
   };
 }
 
