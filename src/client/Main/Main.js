@@ -16,9 +16,12 @@ function Main(props) {
         <span className="MarginRight">
           source : <input value={props.data.data.source} 
                           onChange={(e)=>props.data.handleChange('source', e.target.value)}/>
-          <select value={props.data.data.source} 
+          <select defaultValue={''} value={props.data.data.source} 
                   onChange={(e)=>props.data.handleChange('source', e.target.value)}>
-            {Object.keys(props.data.sourceList.value).map((key, idx) => <option key={idx} value={key}>{props.data.sourceList.value[key]}</option>)}
+            {Object.keys(props.data.sourceList.value).map((key, idx) => 
+              <option key={idx} value={props.data.sourceList.value[key]}>{key}</option>
+            )}
+            <option value={''}></option>
           </select>
         </span>
         <span className="MarginRight">
@@ -107,7 +110,7 @@ function useData() {
   };
 
   function insertToPilot() {
-    fetch(`/api/insert?db=${getMetadata('DBList').PILOT}&folder=${path}`, {
+    fetch(`/api/insert?db=${DBList.value.PILOT}&folder=${path}`, {
       method: 'POST',
       body: JSON.stringify(data),
       headers: {"Content-Type": "application/json"}
@@ -117,7 +120,7 @@ function useData() {
   };
 
   function insertToProduct() {
-    fetch(`/api/insert?db=${getMetadata('DBList').PRODUCT}&folder=${path}`, {
+    fetch(`/api/insert?db=${DBList.value.PRODUCT}&folder=${path}`, {
       method: 'POST',
       body: JSON.stringify(data),
       headers: {"Content-Type": "application/json"}
@@ -173,6 +176,11 @@ function useAudioBuffer(source, file) {
     const that = this;
     fetch(`/api/getAudio?source=${source}&name=${encodeURIComponent(file)}`)
     .then(res => {
+      if (res === null) {
+        setValue(null)
+        return;
+      }
+
       const reader = res.body.getReader();
       let buffer = new Uint8Array(0);
 

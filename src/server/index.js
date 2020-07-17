@@ -28,93 +28,97 @@ ENUM.initialize();
 
 
 function getSnapshot(req, res) {
-    const name = req.query.name.trim(), source = req.query.source.trim(), t = req.query.t.trim(), 
-            size = req.query.size.trim();
+    const name = req.query.name.trim(), t = req.query.t.trim(), size = req.query.size.trim(),
+        source = req.query.source.trim();
 
     const mov = '.mov';
     let videoPath = '/Users/hoon-ilsong/Movies/ForYoutube/', imagePath = '';
     let videoFile = '', imageFile = '';
 
-    if (t === '') {
-        console.log('no t!');
-        return res.send('no t');
-    }
+    try {
+        if (t === '') {
+            console.log('no t!');
+            return res.send('no t');
+        }
 
-    switch(source) {
-        case '0': // witcher3
-            videoPath += 'Witcher3/';
-            break;
-        default:
-            console.log("Source Error!!! : ",source);
-            break;
-    }
+        if (!ENUM.verifySource(source)) throw new Error("Source : ",source);
 
-    imagePath = videoPath + 'ffmpeg';
+        videoPath += `${source}/`;
 
-    videoFile = videoPath + name + mov;
-    imageFile = name + `_${t}.jpeg`;
+        imagePath = videoPath + 'ffmpeg';
 
-    ffmpeg(videoFile)
-        .on('end', function () {
-            fs.readFile(imagePath+'/'+imageFile, function(err, data) {
-                if (err) {
-                    console.log(err.stack);
-                    throw err // Fail if the file can't be read.
-                }
-                res.writeHead(200, {'Content-Type': 'image/jpeg'});
-                res.end(data, 'binary') // Send the file data to the browser.
+        videoFile = videoPath + name + mov;
+        imageFile = name + `_${t}.jpeg`;
 
-                fs.unlink(imagePath+'/'+imageFile, (err) => {
+        ffmpeg(videoFile)
+            .on('end', function () {
+                fs.readFile(imagePath+'/'+imageFile, function(err, data) {
                     if (err) {
-                      console.error(err)
-                      return
+                        console.log(err.stack);
+                        throw err // Fail if the file can't be read.
                     }
-                    //file removed
-                })
-            });
+                    res.writeHead(200, {'Content-Type': 'image/jpeg'});
+                    res.end(data, 'binary') // Send the file data to the browser.
 
-        })
-        .on('error', function (err) {
-            console.log('an error happened: ' + err.message);
-            res.writeHead(404);
-            res.end(err.message);
-        })
-        .screenshots({
-            // count: 1,
-            timestamps: [parseFloat(t)],
-            filename: imageFile,
-            folder: imagePath,
-            size: size
-        });
+                    fs.unlink(imagePath+'/'+imageFile, (err) => {
+                        if (err) {
+                        console.error(err)
+                        return
+                        }
+                        //file removed
+                    })
+                });
+
+            })
+            .on('error', function (err) {
+                console.log("[getSnapshot] Error : " + err.message);
+                res.writeHead(404);
+                res.end(err.message);
+            })
+            .screenshots({
+                // count: 1,
+                timestamps: [parseFloat(t)],
+                filename: imageFile,
+                folder: imagePath,
+                size: size
+            });
+    } catch (e) {
+        console.error(e.stack);
+        res.end(null);
+    }
 }
 
 function getAudio(req, res) {
     const name = req.query.name, source = req.query.source;
+
     const mp3 = '.mp3';
     let path = '/Users/hoon-ilsong/Movies/ForYoutube/';
     let file = '';
 
-    switch(source) {
-        case '0': // witcher3
-            path += 'Witcher3/'
-            break;
+    try {
+        if (!ENUM.verifySource(source)) throw new Error("source : ",source);
+
+        path += `${source}/`;
+
+        file = path + name + mp3;
+
+        // create read stream
+        const readStream = fs.createReadStream(file);
+        
+        // This will wait until we know the readable stream is actually valid before piping
+        readStream.on('open', function () {
+            // This just pipes the read stream to the response object (which goes to the client)
+            readStream.pipe(res);
+        });
+
+        // This catches any errors that happen while creating the readable stream (usually invalid names)
+        readStream.on('error', function(err) {
+            res.end(err);
+        });
+    } catch (e) {
+        console.error(e.stack);
+        res.end(null);
     }
-
-    file = path + name + mp3;
-
-    // create read stream
-    const readStream = fs.createReadStream(file);
-    
-    // This will wait until we know the readable stream is actually valid before piping
-    readStream.on('open', function () {
-        // This just pipes the read stream to the response object (which goes to the client)
-        readStream.pipe(res);
-    });
-
-    // This catches any errors that happen while creating the readable stream (usually invalid names)
-    readStream.on('error', function(err) {
-        res.end(err);
-    });
 }
 
 function getSourceList(res) {
@@ -563,34 +567,34 @@ async function insert(req, res) {
     const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
     req.accepts('application/json');
-    const query = req.body, folder = req.query.folder, db = req.query.db;
+    const data = req.body, query = req.query, folder = query.folder, db = query.db;
 
     try {
         // Connect to the MongoDB cluster
         await client.connect()
 
         let result = undefined
-        const _id = query.source+query.file;
+        const _id = data.source+data.file;
 
-        query['_id'] = _id;
+        data['_id'] = _id;
         
         // SB_VIDEO ISNERT
         result = await client.db(db).collection(ENUM.COL.VIDEO).findOne({ _id: _id });
             
         if (result) {
-            await replaceListing(client, db, ENUM.COL.VIDEO, query);
+            await replaceListing(client, db, ENUM.COL.VIDEO, data);
             console.log('[VIDEO_REPLACE_LISTING] _id : ',_id);
         } else {
             console.log('[VIDEO_CREATE_LISTING] _id : ', _id);
-            await insertListing(client, db, ENUM.COL.VIDEO, query);
+            await insertListing(client, db, ENUM.COL.VIDEO, data);
         }
 
-        delete query._id;
-        fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH, folder, _id+'.json'), JSON.stringify(query, null, "\t"), "utf-8")
+        delete data._id;
+        fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH, folder, _id+'.json'), JSON.stringify(data, null, "\t"), "utf-8");
 
         // INSERT into SB_ENG_BASE  
-        for (let i = 0; i < query['c'].length; ++i) {
-            let stc = query['c'][i]['t']['stc']
+        for (let i = 0; i < data['c'].length; ++i) {
+            let stc = data['c'][i]['t']['stc']
 
             if (stc) {
                 for (let j = 0; j < stc.length; ++j) {
@@ -690,6 +694,7 @@ async function insert(req, res) {
             }
         }
 
+        // TODO
         // How to notice Product Server to update the WORD_LIST?
         // to re-video
         // fs.writeFileSync(LIST_OF_WORD, JSON.stringify(wordList, null, "\t"), "utf-8");
@@ -824,7 +829,7 @@ app.listen(process.env.PORT || 8080, () => {
 
 async function insertListing(client, db, col, listing){
     const result = await client.db(db).collection(col).insertOne(listing);
-    console.log(`New listing created with the following id: ${result.insertedId}(${listing.rt}) to ${col}`);
+    console.log(`a listing inserted with the id: ${result.insertedId} to ${col}`);
 };
 
 async function replaceListing(client, db, col, listing) {
@@ -904,14 +909,17 @@ async function insertWdIntoBase(client, db, listing, hashId) {
 
 async function insertWdIntoList(client, db, wd) {
     if (ENUM.getWd(db, wd) === undefined) {
+        console.log(wd);
+
         let result = await client.db(db).collection(ENUM.COL.ENG_LIST).insertOne({_id:wd, hash:wd.hashCode()});
-        await ENUM.updateWord();
+        ENUM.addWord(db, wd, wd.hashCode());
 
         notifyProductToUpdateWordList();
 
-        if (result.ok !== 1) {
-            throw new Error(result.ok);
-        }
+        console.log(result);
+        // if (result.ok !== 1) {
+        //     throw new Error(result.ok);
+        // }
     }
 };
 

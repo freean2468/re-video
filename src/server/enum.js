@@ -41,14 +41,13 @@ module.exports = function Enum() {
                 this.COL[item] = result[item];
             });
 
-            for (let key in this.DB) {
-                await client.db(this.DB[key]).collection("SB_ENG_LIST").find({}).toArray().then((result) => {
-                    delete result._id;
-    
-                    this.WORD[key] = {};
-                    Object.keys(result).map((item) => {
-                        this.WORD[key][item] = result[item];
-                    });
+            for (let db in this.DB) {
+                await client.db(this.DB[db]).collection("SB_ENG_LIST").find({}).toArray().then((result) => {
+                    this.WORD[db] = {};
+
+                    for (let i in result) {
+                        this.WORD[db][result[i]._id] = result[i].hash;
+                    }
                 });    
             }
         } catch (e) {
@@ -65,16 +64,16 @@ module.exports = function Enum() {
             // Connect to the MongoDB cluster
             await client.connect();
 
-            for (let key in this.DB) {
-                await client.db(this.DB[key]).collection("SB_ENG_LIST").find({}).toArray().then((result) => {
-                    delete result._id;
-    
-                    this.WORD[key] = {};
-                    Object.keys(result).map((item) => {
-                        this.WORD[key][item] = result[item];
-                    });
+            for (let db in this.DB) {
+                await client.db(this.DB[db]).collection("SB_ENG_LIST").find({}).toArray().then((result) => {
+                    this.WORD[db] = {};
+
+                    for (let i in result) {
+                        this.WORD[db][result[i]._id] = result[i].hash;
+                    }
                 });    
             }
+            console.log(this.WORD);
         } catch (e) {
             console.error(e);
         } finally {
@@ -82,20 +81,28 @@ module.exports = function Enum() {
         }
     }
 
+    this.addWord = function (db, wd, hash) {
+        let _db = this.getDBByKey(db);
+        this.WORD[_db][wd] = hash;
+    }
+
     this.getWd = function (db, wd) {
+        console.log(this.WORD);
         let _db = this.getDBByKey(db);
         return this.WORD[_db][wd];
     }
 
     this.getDBByKey = function (db) {
         for (let key in this.DB) {
-            this.DB[key] == db;
-            return key;
+            if (this.DB[key] === db) return key;
         }
         return new Error(`no valid key : ${db}`)
     };
 
-    // this.getSource = function (source) {
-    //     return this.SOURCE[source];
-    // };
+    this.verifySource = function (source) {
+        for (let key in this.SOURCE) {
+            if (this.SOURCE[key] === source) return true;
+        }
+        return false;
+    }
 }

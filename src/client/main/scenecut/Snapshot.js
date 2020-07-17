@@ -18,16 +18,21 @@ function useSnapshot(source, file, time, size) {
                 &size=${size.width}x${size.height}`)
         .then(res => res.blob())
         .then(res => {
-          let arrayBuffer = null;
-          const fileReader = new FileReader();
+            if (res === null) {
+                setValue(null);
+                return;
+            }
 
-          fileReader.onload = function(event) {
-            arrayBuffer = event.target.result;
-            let src = new Blob([new Uint8Array(arrayBuffer)], {type:"image/jpeg"});
+            let arrayBuffer = null;
+            const fileReader = new FileReader();
 
-            setValue(window.URL.createObjectURL(src));
-          };
-          fileReader.readAsArrayBuffer(res);
+            fileReader.onload = function(event) {
+                arrayBuffer = event.target.result;
+                let src = new Blob([new Uint8Array(arrayBuffer)], {type:"image/jpeg"});
+
+                setValue(window.URL.createObjectURL(src));
+            };
+            fileReader.readAsArrayBuffer(res);
         });
     }, [source, file, time]);
 
