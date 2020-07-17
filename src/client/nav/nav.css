@@ -47,8 +47,28 @@
     background: #f6f6f6;
 }
 
-.Nav .NavList .Folder {
+.Nav .NavList .DB {
     margin-left:2px;
+}
+
+.Nav .NavList .DB:first-child {
+    background-color:rgba(44, 0, 0, 0.5);
+}
+
+.Nav .NavList .DB:nth-child(2) {
+    background-color:rgba(0, 44, 0, 0.5);
+}
+
+.Nav .NavList .DB:nth-child(3) {
+    background-color:rgba(0, 0, 44, 0.5);
+}
+
+.Nav .NavList .Folder {
+    margin-left:6px;
+}
+
+.Nav .NavList .Item {
+    margin-left:10px;
 }
 
 .Nav .NavItem .Item {

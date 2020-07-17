@@ -125,35 +125,81 @@ function getDBList(res) {
     res.json(ENUM.DB);
 }
 
-function getNav(res) {
+async function getNav(res) {
     const folderList = fs.readdirSync(VIDEO_ARCHIVE_PATH);
     let responseData = {};
+
+    // add fileList (this will be removed not so long from now)
+    let fileTree = {};
 
     folderList.forEach(folder => {
         if (folder === '.DS_Store') {
             return;
         }
-        responseData[folder]=[];
+        fileTree[folder]=[];
         const fileList = fs.readdirSync(VIDEO_ARCHIVE_PATH+'/'+folder);
         fileList.forEach(elm => {
             const fileName = elm.substring(0, elm.lastIndexOf('.'));
             const ex = elm.substring(elm.lastIndexOf('.')+1, elm.length);
             if (ex === 'json') {
-                responseData[folder].push(fileName);
+                fileTree[folder].push(fileName);
             }
-        })
+        });
     });
 
-    Object.keys(responseData).map((folder) => 
-        responseData[folder].sort(function (a, b) {
+    Object.keys(fileTree).map((folder) => 
+        fileTree[folder].sort(function (a, b) {
             // console.log(a.file);
             return a.localeCompare(b);
         })
-    )
+    );
 
-    console.log(responseData);
+    responseData['file'] = fileTree;
 
-    res.send(responseData)
+    // add pilot list
+    const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true });
+
+    // Connect to the MongoDB cluster
+    try {
+        await client.connect();
+
+        await client.db(ENUM.DB.PILOT).collection(ENUM.COL.VIDEO).find({}).toArray().then(async (result) => {
+            let pilotTree = {};
+
+            for (let i in result) {
+                const split = result[i]._id.split('#');
+                if (pilotTree[split[0]] === undefined) {
+                    pilotTree[split[0]] = [];
+                }
+
+                pilotTree[split[0]].push(split[1]);
+            }
+
+            responseData['pilot'] = pilotTree;
+
+            await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.VIDEO).find({}).toArray().then(async (result) => {
+                let productTree = {};
+
+                for (let i in result) {
+                    const split = result[i]._id.split('#');
+                    if (productTree[split[0]] === undefined) {
+                        productTree[split[0]] = [];
+                    }
+
+                    productTree[split[0]].push(split[1]);
+                }
+
+                responseData['product'] = productTree;
+
+                return res.send(responseData);
+            });
+        });
+    } catch (e) {
+        console.error(e.stack)
+        res.json({res:e})
+    } finally {
+        await client.close()
+    }
 }
 
 function getFile(req, res) {
@@ -322,7 +368,7 @@ async function getStrtInfo(req, res) {
 //     }
 // }
 
-async function deleteWdBase(req, res) {
+async function deleteWd(req, res) {
     const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true });
     const query = req.query, 
         ct = query.ct.trim(), lt = query.lt.trim(), link = query.link.trim(), db = query.db,
@@ -332,22 +378,18 @@ async function deleteWdBase(req, res) {
         // Connect to the MongoDB cluster
         await client.connect();
 
-        const result = await client.db(db).collection(ENUM.COL.ENG_BASE).findOne({ 
+        let result = await client.db(db).collection(ENUM.COL.ENG_BASE).findOne({ 
             _id: ct.hashCode(),
             rt:ct,
             'wd_m.lt': lt
         });
-
-        // console.log('lt : ', lt);
-        // console.log('link : ', link);
-        // console.log('pos : c('+c+') stc('+stc+') wd('+wd+')');
 
         if (result) {
             // console.log(result);
             for (let i = 0; i < result.wd_m.length; ++i) {
                 if (result.wd_m[i].lt === lt) {
                     if (result.wd_m[i].lk.length <= 1) {
-                        const test = await client.db(db).collection(ENUM.COL.ENG_BASE).updateOne({ 
+                        result = await client.db(db).collection(ENUM.COL.ENG_BASE).updateOne({ 
                             _id: ct.hashCode(),
                             rt:ct,
                             'wd_m.lt': lt,
@@ -364,13 +406,35 @@ async function deleteWdBase(req, res) {
                             }
                         });
 
-                        if (test.result.nModified !== 1)
-                            throw new Error(test.result.nModified + ' has been modified');
+                        if (result.result.nModified !== 1) {
+                            throw new Error(result.result.nModified + ' has been modified');
+                        } else {
+                            result = await client.db(db).collection(ENUM.COL.ENG_BASE).findOne({ 
+                                _id: ct.hashCode(),
+                                rt:ct
+                            });
+
+                            if (result.wd_m.length === 0 && result.strt_m.length === 0) {
+                                if (ENUM.DB.PRODUCT === ENUM.getDBByKey(db)) {
+                                    notifyProductToUpdateWordList();
+                                }
+
+                                await client.db(db).collection(ENUM.COL.ENG_BASE).deleteOne({ 
+                                    _id: ct.hashCode(),
+                                    rt:ct
+                                });
+
+                                await client.db(db).collection(ENUM.COL.ENG_LIST).deleteOne({ 
+                                    _id: ct,
+                                    hash:ct.hashCode()
+                                });
+                            }
+                        }
                     } else {
                         for (let j = 0; j < result.wd_m[i].lk.length; ++j) {
                             if (result.wd_m[i].lk[j].link.trim() == link.trim() && result.wd_m[i].lk[j].pos.c == c
                                     && result.wd_m[i].lk[j].pos.stc == stc && result.wd_m[i].lk[j].pos.wd == wd) {
-                                const test = await client.db(db).collection(ENUM.COL.ENG_BASE).updateOne({ 
+                                        result = await client.db(db).collection(ENUM.COL.ENG_BASE).updateOne({ 
                                     _id: ct.hashCode(),
                                     rt:ct,
                                     'wd_m.lt': lt,
@@ -390,8 +454,8 @@ async function deleteWdBase(req, res) {
                                     }
                                 });
 
-                                if (test.result.nModified !== 1)
-                                    throw new Error(test.result.nModified + ' has been modified');
+                                if (result.result.nModified !== 1)
+                                    throw new Error(result.result.nModified + ' has been modified');
                                 break;
                             }
                         }
@@ -411,7 +475,7 @@ async function deleteWdBase(req, res) {
     }
 }
 
-async function deleteStrtFromBase(req, res) {
+async function deleteStrt(req, res) {
     const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true });
     const query = req.query, rt = query.rt.trim(), t = query.t.trim(), link = query.link.trim(), db = query.db,
         c = query.c.trim(), stc = query.stc.trim();
@@ -716,8 +780,8 @@ async function addCanvasInfo(req, res) {
             res.json([`${type}`]);
         }
     } catch (e) {
-        console.error(e)
-        res.json([])
+        console.error(e);
+        res.json([]);
     } finally {
         await client.close()
     }
@@ -734,8 +798,8 @@ app.get('/api/getStrtInfo', (req, res) => getStrtInfo(req, res));
 // app.get('/api/deleteVideo', (req, res) => deleteVideo(req, res));
 
 app.get('/api/insertWd', (req, res) => insertWd(req, res));
-app.get('/api/deleteWdBase', (req, res) => deleteWdBase(req, res));
-app.get('/api/deleteStrtFromBase', (req, res) => deleteStrtFromBase(req, res));
+app.get('/api/deleteWd', (req, res) => deleteWd(req, res));
+app.get('/api/deleteStrt', (req, res) => deleteStrt(req, res));
 
 // NLPK
 app.get('/api/tokenizeStc', (req, res) => tokenizeStc(req, res));
@@ -760,7 +824,7 @@ app.listen(process.env.PORT || 8080, () => {
 
 async function insertListing(client, db, col, listing){
     const result = await client.db(db).collection(col).insertOne(listing);
-    console.log(`New listing created with the following id: ${result.insertedId}(${listing.rt})`);
+    console.log(`New listing created with the following id: ${result.insertedId}(${listing.rt}) to ${col}`);
 };
 
 async function replaceListing(client, db, col, listing) {
@@ -842,6 +906,9 @@ async function insertWdIntoList(client, db, wd) {
     if (ENUM.getWd(db, wd) === undefined) {
         let result = await client.db(db).collection(ENUM.COL.ENG_LIST).insertOne({_id:wd, hash:wd.hashCode()});
         await ENUM.updateWord();
+
+        notifyProductToUpdateWordList();
+
         if (result.ok !== 1) {
             throw new Error(result.ok);
         }
@@ -857,6 +924,16 @@ async function insertStrt(client, db, strt, id) {
         throw new Error(result.result.nModified)
     }
 };
+
+// To other server
+function notifyProductToUpdateWordList(db) {
+    if (ENUM.DB.PRODUCT === ENUM.getDBByKey(db)) {
+        // do sth to notify product server that update the word list.
+        // fetch('http://ume.gg/updateWordList')
+    }
+}
+
+
 
 Object.defineProperty(String.prototype, 'hashCode', {
     value: function() {

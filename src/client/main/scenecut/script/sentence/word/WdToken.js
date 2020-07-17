@@ -42,14 +42,14 @@ export default function WdToken(props) {
         }
       });
 
-      fetch(`/api/deleteWdBase?db=${getMetadata('DBList').value.PILOT}&ct=${getFromWd('ct')}&lt=${getFromWd('lt')}
+      fetch(`/api/deleteWd?db=${getMetadata('DBList').value.PILOT}&ct=${getFromWd('ct')}&lt=${getFromWd('lt')}
             &link=${encodeURIComponent(getData('source')+getData('file'))}
             &c=${props.idxC}&stc=${props.idxStc}&wd=${props.idxWd}`)
       .then(res => res.json())
       .then(res => console.log('[deleteWdBase_CT_RES] : ', res))
 
       if (getFromWd('rt') !== '') {
-        fetch(`/api/deleteWdBase?db=${getMetadata('DBList').value.PILOT}&ct=${getFromWd('rt')}&lt=${getFromWd('lt')}  
+        fetch(`/api/deleteWd?db=${getMetadata('DBList').value.PILOT}&ct=${getFromWd('rt')}&lt=${getFromWd('lt')}  
               &link=${encodeURIComponent(getData('source')+getData('file'))}
               &c=${props.idxC}&stc=${props.idxStc}&wd=${props.idxWd}`)
         .then(res => res.json())

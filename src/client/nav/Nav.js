@@ -13,25 +13,30 @@ export default function Nav(props) {
             &folder=${encodeURIComponent(folder)}`)
       .then(res => res.json())
       .then(file => props.init(file, folder));
-  }
+  };
 
   return (
     <div className="Nav">
       <SearchGroup/>
       <div className="NavList">
         <ul>
-          {Object.keys(nav.value).map((folder) => 
-            <div className="Folder" key={folder} onClick={()=>selected.handleClick(folder)}>
-              {selected.value === folder ? '+'+folder : '-'+folder }
-              {selected.value === folder &&
-                nav.value[folder].map((fileName) =>
-                  <li key={fileName} className="NavItem" onClick={(e)=>handleClick(e, fileName, folder)}>
-                    <a className="Item" href="#">
-                      {fileName}
-                    </a>
-                  </li>
-                )
-              }
+          {Object.keys(nav.value).map((db) => 
+            <div className="DB" key={db} >
+              {selected.displayDB(db)}
+              {Object.keys(nav.value[db]).map((folder) => 
+                <div className="Folder" key={folder} onClick={()=>selected.handleClick(db, folder)}>
+                  {selected.displayFolder(folder)}
+                  {selected.folder === folder &&
+                    nav.value[db][folder].map((fileName) =>
+                      <li key={fileName} className="NavItem" onClick={(e)=>handleClick(e, fileName, folder)}>
+                        <a className="Item" href="#">
+                          {fileName}
+                        </a>
+                      </li>
+                    )
+                  }
+                </div>
+              )}
             </div>
           )}
         </ul>
@@ -47,7 +52,7 @@ function useNav() {
     fetch('/api/getNav')
     .then(res => res.json())
     .then(list => setValue(list));
-  },[])
+  },[]);
 
   return {
     value
@@ -55,15 +60,32 @@ function useNav() {
 }
 
 function useSelected() {
-  const [value, setValue] = useState('');
+  const [db, setDB] = useState('');
+  const [folder, setFolder] = useState('');
 
-  function handleClick(key) {
-    if (value === key) setValue(null);
-    else setValue(key);
+  function handleClick(_db, _folder) {
+    if (folder === _folder && db === _db) {
+      setFolder(null);
+      setDB(null);
+    } else {
+      setDB(_db);
+      setFolder(_folder);
+    }
   };
 
+  function displayFolder(_folder) {
+    return folder === _folder ? '+'+_folder : '-'+_folder;
+  }
+
+  function displayDB(_db) {
+    return db === _db ? '+'+_db : '-'+_db;
+  }
+
   return {
-    value,
-    handleClick
+    db,
+    folder,
+    handleClick,
+    displayDB,
+    displayFolder
   };
 }
