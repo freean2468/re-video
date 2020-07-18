@@ -6,13 +6,23 @@ export default function Nav(props) {
   const nav = useNav();
   const selected = useSelected();
 
-  function handleClick(e, fileName, folder) {
+  function handleClick(e, fileName, db, folder) {
       e.preventDefault();
       e.stopPropagation();
-      fetch(`/api/getFile?fileName=${encodeURIComponent(fileName)}
-            &folder=${encodeURIComponent(folder)}`)
-      .then(res => res.json())
-      .then(file => props.init(file, folder));
+
+      // TODO
+      if (db === 'file') {
+        fetch(`/api/getFile?fileName=${encodeURIComponent(fileName)}&folder=${encodeURIComponent(folder)}`)
+        .then(res => res.json())
+        .then(file => props.init(file, folder));
+      } else {
+        fetch(`/api/getVideo?id=${encodeURIComponent(folder+fileName)}&db=${db}`)
+        .then(res => res.json())
+        .then(video => {
+          if (video === null) return;
+          props.init(video, folder);
+        });
+      }
   };
 
   return (
@@ -25,10 +35,10 @@ export default function Nav(props) {
               {selected.displayDB(db)}
               {Object.keys(nav.value[db]).map((folder) => 
                 <div className="Folder" key={folder} onClick={()=>selected.handleClick(db, folder)}>
-                  {selected.displayFolder(folder)}
-                  {selected.folder === folder &&
+                  {selected.displayFolder(db, folder)}
+                  {(selected.folder === folder && selected.db === db) &&
                     nav.value[db][folder].map((fileName) =>
-                      <li key={fileName} className="NavItem" onClick={(e)=>handleClick(e, fileName, folder)}>
+                      <li key={fileName} className="NavItem" onClick={(e)=>handleClick(e, fileName, db, folder)}>
                         <a className="Item" href="#">
                           {fileName}
                         </a>
@@ -73,8 +83,8 @@ function useSelected() {
     }
   };
 
-  function displayFolder(_folder) {
-    return folder === _folder ? '+'+_folder : '-'+_folder;
+  function displayFolder(_db, _folder) {
+    return db === _db && folder === _folder ? '+'+_folder : '-'+_folder;
   }
 
   function displayDB(_db) {

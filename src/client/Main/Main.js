@@ -92,7 +92,12 @@ function useData() {
         if (c.t) {
           if (c.t.stc) {
             c.t.stc.map((stc, _idx) => {
-              if (!stc.strt) _value.c[idx].t.stc[_idx].strt=[];
+              if (!stc.strt) stc.strt=[];
+              if (stc.wd) {
+                stc.wd.map((wd) => {
+                  if (wd.is === undefined) wd.is = true;
+                })
+              }
             });
           } else {
             c.cv = {};

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 //       dp, ct, rt, lt
 //     */
 export default function WdToken(props) {
-  const [isDisabled, setIsDisabled] = useState(true);
+  const [isDisabled, setIsDisabled] = useState(getFromWd('is'));
   const [ltList, setLtList] = useState([]);
   const src = useSrc(getFromWd('ib'));
 
@@ -136,7 +136,9 @@ export default function WdToken(props) {
                 disabled={(isDisabled)? "disabled" : ""}/>
       lt: <input className="Lt" value={getFromWd('lt')} onChange={(e) => handleChange('lt', e.target.value)}
                 disabled={(isDisabled)? "disabled" : ""}/>
-      <button className="Toggler" onClick={handleClickToggler} >Toggler</button>
+      {getFromWd('is') && 
+        <button className="Toggler" onClick={handleClickToggler}>Toggler</button>
+      }
       {ltList !== [] &&
         <>
           ltList: 
@@ -147,6 +149,8 @@ export default function WdToken(props) {
           </select>
         </>
       }
+      <input className="Is" type="checkbox" checked={getFromWd('is')} 
+            onChange={(e) => handleChange('is', e.target.checked)} defaultChecked={true} />
     </div>
   );
 }

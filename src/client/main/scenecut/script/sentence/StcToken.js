@@ -44,6 +44,7 @@ export default function StcToken(props) {
         ct:wd,
         rt:'',
         lt:'',
+        is:true,
         st:'',
         ib:[]
       }];

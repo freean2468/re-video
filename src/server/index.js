@@ -176,10 +176,10 @@ async function getNav(res) {
                     pilotTree[split[0]] = [];
                 }
 
-                pilotTree[split[0]].push(split[1]);
+                pilotTree[split[0]].push('#'+split[1]);
             }
 
-            responseData['pilot'] = pilotTree;
+            responseData[ENUM.DB.PILOT] = pilotTree;
 
             await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.VIDEO).find({}).toArray().then(async (result) => {
                 let productTree = {};
@@ -190,10 +190,10 @@ async function getNav(res) {
                         productTree[split[0]] = [];
                     }
 
-                    productTree[split[0]].push(split[1]);
+                    productTree[split[0]].push('#'+split[1]);
                 }
 
-                responseData['product'] = productTree;
+                responseData[ENUM.DB.PRODUCT] = productTree;
 
                 return res.send(responseData);
             });
@@ -223,6 +223,30 @@ function tokenizeStc(req, res) {
     res.json(token)
 }
 
+async function getVideo(req, res) {
+    const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    const query = req.query, _id = query.id, db = query.db;
+
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect()
+
+        let result = await client.db(db).collection(ENUM.COL.VIDEO).findOne({ _id: _id });
+
+        if (result) {
+            delete result._id
+            res.json(result);
+        } else {
+            throw new Error('none found according to the id('+_id+')');
+        }
+    } catch (e) {
+        console.error(e.stack);
+        res.end(null);
+    } finally {
+        await client.close()
+    }
+}
+
 async function getCanvasType(req, res) {
     const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true })
     const query = req.query, source = query.source;
@@ -238,7 +262,7 @@ async function getCanvasType(req, res) {
             res.json(Object.keys(result));
         } else {
             throw new Error('not found according to the source('+source+')');
-        }
+        } 
     } catch (e) {
         console.error(e.stack);
         res.json([]);
@@ -589,8 +613,9 @@ async function insert(req, res) {
             await insertListing(client, db, ENUM.COL.VIDEO, data);
         }
 
+        // TODO
         delete data._id;
-        fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH, folder, _id+'.json'), JSON.stringify(data, null, "\t"), "utf-8");
+        fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH+'_BACKUP', folder, _id+'.json'), JSON.stringify(data, null, "\t"), "utf-8");
 
         // INSERT into SB_ENG_BASE  
         for (let i = 0; i < data['c'].length; ++i) {
@@ -604,6 +629,10 @@ async function insert(req, res) {
                         for (let k = 0; k < wd.length; ++k) {
                             const data = wd[k], ct = data['ct'].toLowerCase();
                             let rt = undefined;
+
+                            if (data.is === false) {
+                                continue;
+                            }
 
                             if (data['rt']) rt = data['rt'].toLowerCase();
                             else rt = ct;
@@ -796,6 +825,7 @@ async function addCanvasInfo(req, res) {
 app.post('/api/insert', (req, res) => insert(req, res));
 app.post('/api/addCanvasInfo', (req, res) => addCanvasInfo(req, res));
 
+app.get('/api/getVideo', (req, res) => getVideo(req, res));
 app.get('/api/getCanvasType', (req, res) => getCanvasType(req, res));
 app.get('/api/getCanvasInfo', (req, res) => getCanvasInfo(req, res));
 app.get('/api/getWdInfo', (req, res) => getWdInfo(req, res));
@@ -908,15 +938,13 @@ async function insertWdIntoBase(client, db, listing, hashId) {
 };
 
 async function insertWdIntoList(client, db, wd) {
-    if (ENUM.getWd(db, wd) === undefined) {
-        console.log(wd);
-
-        let result = await client.db(db).collection(ENUM.COL.ENG_LIST).insertOne({_id:wd, hash:wd.hashCode()});
+    if (ENUM.getWord(db, wd) === undefined) {
+        await insertListing(client, db, ENUM.COL.ENG_LIST, {_id:wd, hash:wd.hashCode()});
         ENUM.addWord(db, wd, wd.hashCode());
 
         notifyProductToUpdateWordList();
 
-        console.log(result);
+        // TODO
         // if (result.ok !== 1) {
         //     throw new Error(result.ok);
         // }

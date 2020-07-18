@@ -73,7 +73,6 @@ module.exports = function Enum() {
                     }
                 });    
             }
-            console.log(this.WORD);
         } catch (e) {
             console.error(e);
         } finally {
@@ -86,8 +85,7 @@ module.exports = function Enum() {
         this.WORD[_db][wd] = hash;
     }
 
-    this.getWd = function (db, wd) {
-        console.log(this.WORD);
+    this.getWord = function (db, wd) {
         let _db = this.getDBByKey(db);
         return this.WORD[_db][wd];
     }
