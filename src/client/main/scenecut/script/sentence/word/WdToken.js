@@ -43,31 +43,31 @@ export default function WdToken(props) {
       });
 
       fetch(`/api/deleteWd?db=${getMetadata('DBList').value.PILOT}&ct=${getFromWd('ct')}&lt=${getFromWd('lt')}
-            &link=${encodeURIComponent(getData('source')+getData('file'))}
+            &vid=${encodeURIComponent(getData('source')+getData('file'))}
             &c=${props.idxC}&stc=${props.idxStc}&wd=${props.idxWd}`)
       .then(res => res.json())
-      .then(res => console.log('[deleteWdBase_CT_RES] : ', res))
+      .then(res => console.log('[deleteWdBase_CT_RES] : ', res));
 
       if (getFromWd('rt') !== '') {
         fetch(`/api/deleteWd?db=${getMetadata('DBList').value.PILOT}&ct=${getFromWd('rt')}&lt=${getFromWd('lt')}  
-              &link=${encodeURIComponent(getData('source')+getData('file'))}
+              &vid=${encodeURIComponent(getData('source')+getData('file'))}
               &c=${props.idxC}&stc=${props.idxStc}&wd=${props.idxWd}`)
         .then(res => res.json())
-        .then(res => console.log('[deleteWdBase_RT_RES] : ', res))
+        .then(res => console.log('[deleteWdBase_RT_RES] : ', res));
       }
     } else {
       fetch(`/api/insertWd?db=${getMetadata('DBList').value.PILOT}&ct=${getFromWd('ct')}&lt=${getFromWd('lt')}
-            &link=${encodeURIComponent(getData('source')+getData('file'))}
+            &vid=${encodeURIComponent(getData('source')+getData('file'))}
             &c=${props.idxC}&stc=${props.idxStc}&wd=${props.idxWd}`)
       .then(res => res.json())
       .then(res => console.log('[INSERT_WD(CT)_RES] ',res.res));
 
       if (getFromWd('rt') !== '') {
         fetch(`/api/insertWd?db=${getMetadata('DBList').value.PILOT}&ct=${getFromWd('rt')}&lt=${getFromWd('lt')}
-              &link=${encodeURIComponent(getData('source')+getData('file'))}
+              &vid=${encodeURIComponent(getData('source')+getData('file'))}
               &c=${props.idxC}&stc=${props.idxStc}&wd=${props.idxWd}`)
         .then(res => res.json())
-        .then(res => console.log('[INSERT_WD(RT)_RES] : ', res))
+        .then(res => console.log('[INSERT_WD(RT)_RES] : ', res));
       }
 
       setLtList([]);

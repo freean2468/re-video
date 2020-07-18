@@ -51,13 +51,20 @@ export default function strtToken(props) {
             .then(res => res.json())
             .then(res => setStrtList(res.res));
 
-            fetch(`/api/deleteStrtFromBase?rt=${getFromStrt('rt')}&t=${getFromStrt('t')}
-                &link=${encodeURIComponent(getMetadata('source')+getMetadata('file'))}
+            fetch(`/api/deleteStrt?db=${getMetadata('DBList').value.PILOT}
+                &rt=${getFromStrt('rt')}&t=${getFromStrt('t')}
+                &vid=${encodeURIComponent(getMetadata('source')+getMetadata('file'))}
                 &c=${props.idxC}&stc=${props.idxStc}`)
             .then(res => res.json())
             .then(res => console.log('[deleteStrtFromBase_RES] : ', res));
         } else {
-            // this.insert();
+            fetch(`/api/insertStrt?db=${getMetadata('DBList').value.PILOT}
+                &rt=${getFromStrt('rt')}&t=${getFromStrt('t')}
+                &vid=${encodeURIComponent(getMetadata('source')+getMetadata('file'))}
+                &c=${props.idxC}&stc=${props.idxStc}`)
+            .then(res => res.json())
+            .then(res => console.log('[deleteStrtFromBase_RES] : ', res));
+            
             setStrtList([]);
         }
     }

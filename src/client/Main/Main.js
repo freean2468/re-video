@@ -37,8 +37,8 @@ function Main(props) {
           }
         </div>
         <div>
-          <button onClick={props.data.insertToPilot} >Insert to Pilot</button>
-          <button onClick={props.data.insertToProduct} >Insert to Product</button>
+          <button onClick={props.data.pushToPilot} >Push to Pilot</button>
+          <button onClick={props.data.pushToProduct} >Push to Product</button>
         </div>
         <div>
           {/* this takes too much time to draw.
@@ -54,7 +54,7 @@ function Main(props) {
 }
 
 function useData() {
-  // data for inserting
+  // data for pushing
   const [data, setData] = useState({
     source:'',
     file:'',
@@ -114,24 +114,24 @@ function useData() {
     setPath(_path);
   };
 
-  function insertToPilot() {
-    fetch(`/api/insert?db=${DBList.value.PILOT}&folder=${path}`, {
+  function pushToPilot() {
+    fetch(`/api/push?db=${DBList.value.PILOT}&folder=${path}`, {
       method: 'POST',
       body: JSON.stringify(data),
       headers: {"Content-Type": "application/json"}
     })
     .then(res => res.json())
-    .then(res => console.log('[INSERT RES] ',res.res));
+    .then(res => console.log('[PUSH RES] ',res.res));
   };
 
-  function insertToProduct() {
-    fetch(`/api/insert?db=${DBList.value.PRODUCT}&folder=${path}`, {
+  function pushToProduct() {
+    fetch(`/api/push?db=${DBList.value.PRODUCT}&folder=${path}`, {
       method: 'POST',
       body: JSON.stringify(data),
       headers: {"Content-Type": "application/json"}
     })
     .then(res => res.json())
-    .then(res => console.log('[INSERT RES] ',res.res));
+    .then(res => console.log('[PUSH RES] ',res.res));
   };
 
   function handleChange(_key, _value) {
@@ -159,8 +159,8 @@ function useData() {
 
     setData,
     init,
-    insertToPilot,
-    insertToProduct,
+    pushToPilot,
+    pushToProduct,
     handleChange,
     handleChangeFile
   };
