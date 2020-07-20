@@ -16,7 +16,7 @@ function Main(props) {
         <span className="MarginRight">
           source : <input value={props.data.data.source} 
                           onChange={(e)=>props.data.handleChange('source', e.target.value)}/>
-          <select defaultValue={''} value={props.data.data.source} 
+          <select value={props.data.data.source} 
                   onChange={(e)=>props.data.handleChange('source', e.target.value)}>
             {Object.keys(props.data.sourceList.value).map((key, idx) => 
               <option key={idx} value={props.data.sourceList.value[key]}>{key}</option>
@@ -272,6 +272,7 @@ function useCvTypeList(source) {
   }, [source]);
 
   function init(source) {
+    if (source === '') return;
     fetch(`/api/getCanvasType?source=${source}`)
     .then(res => res.json())
     .then(res => { setValue(res); });

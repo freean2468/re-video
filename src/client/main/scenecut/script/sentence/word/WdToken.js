@@ -150,7 +150,7 @@ export default function WdToken(props) {
         </>
       }
       <input className="Is" type="checkbox" checked={getFromWd('is')} 
-            onChange={(e) => handleChange('is', e.target.checked)} defaultChecked={true} />
+            onChange={(e) => handleChange('is', e.target.checked)}/>
     </div>
   );
 }

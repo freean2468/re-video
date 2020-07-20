@@ -18,7 +18,7 @@ export default function Canvas(props) {
     };
 
     function handleChange(_key, _value) {
-        let cv = getCv();
+        let cv = getFromC('cv');
         cv[_key] = _value;
         props.handleChange('cv', cv);
     };
@@ -33,7 +33,7 @@ export default function Canvas(props) {
     };
 
     function handleClickAdd() {
-        let json = getCv();
+        let json = getFromC('cv');
 
         fetch(`/api/addCanvasInfo?source=${getData('source')}&type=${getFromCv('type')}`, {
             method: 'POST',

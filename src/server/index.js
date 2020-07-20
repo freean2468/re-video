@@ -594,27 +594,32 @@ async function push(req, res) {
 
     try {
         // Connect to the MongoDB cluster
-        await client.connect()
+        await client.connect();
 
         let result = undefined
         const _id = data.source+data.file;
 
+        // Backup into the local
+        fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH+'_BACKUP', folder, _id+'.json'), JSON.stringify(data, null, "\t"), "utf-8");
+        
         data['_id'] = _id;
+
+        // pull data from PILOT completely.
+        await pull(client, ENUM.DB.PILOT, _id);
+        if (db === ENUM.DB.PRODUCT) {
+            await pull(client, ENUM.DB.PRODUCT, _id);
+        }
         
         // SB_VIDEO ISNERT
         result = await client.db(db).collection(ENUM.COL.VIDEO).findOne({ _id: _id });
             
         if (result) {
             await replaceListing(client, db, ENUM.COL.VIDEO, data);
-            console.log('[VIDEO_REPLACE_LISTING] _id : ',_id);
         } else {
-            console.log('[VIDEO_CREATE_LISTING] _id : ', _id);
             await insertListing(client, db, ENUM.COL.VIDEO, data);
         }
 
-        // TODO
         delete data._id;
-        fs.writeFileSync(path.join(VIDEO_ARCHIVE_PATH+'_BACKUP', folder, _id+'.json'), JSON.stringify(data, null, "\t"), "utf-8");
 
         // INSERT into SB_ENG_BASE  
         for (let i = 0; i < data['c'].length; ++i) {
@@ -653,21 +658,11 @@ async function push(req, res) {
                                     }],
                                     strt_m:[]
                                 };
-                                if (db === ENUM.DB.PRODUCT) {
-                                    await deleteWdFromBase(client, ENUM.DB.PRODUCT, rt, _id);
-                                }
-                                const result = await insertWdIntoBase(client, db, listing, rt.hashCode());
-                                if (db === ENUM.DB.PRODUCT) {
-                                    await deleteWdFromBase(client, ENUM.DB.PILOT, rt, _id);
-                                }
-                                return result;
+                                await insertWdIntoBase(client, db, listing, rt.hashCode());
                             };
                             
                             // firstly, insert ct listing into base collection
-                            const insertRes = await insert(client, db, ct, lt, _id, i, j, k);
-
-                            console.log('[Push_insertRes] : ', insertRes);
-
+                            await insert(client, db, ct, lt, _id, i, j, k);
                             // then rt
                             if (rt !== ct) {
                                 await insert(client, db, rt, lt, _id, i, j, k);
@@ -697,13 +692,7 @@ async function push(req, res) {
                                 );
 
                                 if (result.strt_m.length === 0) {
-                                    if (db === ENUM.DB.PRODUCT) {
-                                        await deleteStrtFromBase(client, DNUM.DB.PRODUCT, rt, _id);
-                                    }
                                     await insertStrt(client, db, strt_m, rt.hashCode());
-                                    if (db === ENUM.DB.PRODUCT) {
-                                        await deleteStrtFromBase(client, DNUM.DB.PILOT, rt, _id);
-                                    }
                                 } else {
                                     result = await client.db(db).collection(ENUM.COL.ENG_BASE).findOne({
                                         _id: rt.hashCode(),
@@ -716,13 +705,7 @@ async function push(req, res) {
                                     });
 
                                     if (result === null) {
-                                        if (db === ENUM.DB.PRODUCT) {
-                                            await deleteStrtFromBase(client, DNUM.DB.PRODUCT, rt, _id);
-                                        }
                                         await insertStrt(client, db, strt_m, rt.hashCode());
-                                        if (db === ENUM.DB.PRODUCT) {
-                                            await deleteStrtFromBase(client, DNUM.DB.PILOT, rt, _id);
-                                        }
                                     }
                                 }
                             }
@@ -731,6 +714,8 @@ async function push(req, res) {
                 }
             }
         }
+
+        // ENUM.updateWord();
 
         if (db === ENUM.DB.PRODUCT) {
             // TODO
@@ -826,14 +811,14 @@ async function insertStrt(req, res) {
 
 async function addCanvasInfo(req, res) {
     const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    const query = req.query, source = query.source, type = query.type, db = query.db;
+    const query = req.query, source = query.source, type = query.type;
 
     req.accepts('application/json');
     const body = req.body;
 
     try {
         // Connect to the MongoDB cluster
-        await client.connect()
+        await client.connect();
 
         let result = await client.db(ENUM.DB.PRODUCT).collection(ENUM.COL.CANVAS).findOne({ _id: source });
         let o = {
@@ -842,11 +827,11 @@ async function addCanvasInfo(req, res) {
             "pt" : body.pt,
             "pl" : body.pl,
             "pr" : body.pr
-        }
+        };
 
         if (result) {
             result[type] = o;
-            await replaceListing(client, db, ENUM.COL.CANVAS, result);
+            await replaceListing(client, ENUM.DB.PRODUCT, ENUM.COL.CANVAS, result);
             delete result._id;
             res.json(Object.keys(result));
         } else {
@@ -854,8 +839,8 @@ async function addCanvasInfo(req, res) {
                 _id : source,
             }
             json[type] = o
-            await insertListing(client, db, ENUM.COL.CANVAS, json);
-            delete result._id;
+            await insertListing(client, ENUM.DB.PRODUCT, ENUM.COL.CANVAS, json);
+            delete json._id;
             res.json([`${type}`]);
         }
     } catch (e) {
@@ -923,6 +908,7 @@ async function replaceListing(client, db, col, listing) {
 async function insertWdIntoBase(client, db, listing, hashId) {
     let result = await client.db(db).collection(ENUM.COL.ENG_BASE).findOne({_id:hashId});
 
+    await insertWdIntoList(client, db, listing.rt);
     if (result === null) {
         await insertListing(client, db, ENUM.COL.ENG_BASE, listing);
     } else {
@@ -941,7 +927,6 @@ async function insertWdIntoBase(client, db, listing, hashId) {
                     throw new Error(transRes.result.nModified)
                 }
 
-                await insertWdIntoList(client, db, listing.rt);
                 return true;
             }
         }
@@ -955,25 +940,26 @@ async function insertWdIntoBase(client, db, listing, hashId) {
             throw new Error(transRes.result.nModified)
         }
 
-        await insertWdIntoList(client, db, listing.rt);
         return true;
     }
 };
 
-async function deleteWdFromBase(client, db, ct, vid) {
+async function deleteWdFromBase(client, db, rt, vid) {
     let result = await client.db(db).collection(ENUM.COL.ENG_BASE).findOne({ 
-        _id: ct.hashCode(),
-        rt:ct
+        _id: rt.hashCode(),
+        rt:rt
     });
 
     // TODO
     // Here could be performence problem.
+    console.log(result);
     if (result) {
-        for (let i = 0; i < result.wd_m.length; ++i) {
+        const length = result.wd_m.length;
+        for (let i = 0; i < length; ++i) {
             if (result.wd_m[i].lk.length <= 1) {
                 result = await client.db(db).collection(ENUM.COL.ENG_BASE).updateOne({ 
-                    _id: ct.hashCode(),
-                    rt:ct,
+                    _id: rt.hashCode(),
+                    rt:rt,
                     'wd_m.lk.vid':vid,
                 },
                 {
@@ -985,11 +971,12 @@ async function deleteWdFromBase(client, db, ct, vid) {
                 });
 
                 if (result.result.nModified !== 1) {
-                    throw new Error(result.result.nModified + ' has been modified (expected:1)');
+                    // throw new Error(result.result.nModified + ' has been modified (expected:1)');
+                    console.log(result.result.nModified + ' has been modified (expected:1)');
                 } else {
                     result = await client.db(db).collection(ENUM.COL.ENG_BASE).findOne({ 
-                        _id: ct.hashCode(),
-                        rt:ct
+                        _id: rt.hashCode(),
+                        rt:rt
                     });
 
                     if (result.wd_m.length === 0) {
@@ -998,13 +985,13 @@ async function deleteWdFromBase(client, db, ct, vid) {
                         }
 
                         await client.db(db).collection(ENUM.COL.ENG_BASE).deleteOne({ 
-                            _id: ct.hashCode(),
-                            rt:ct
+                            _id: rt.hashCode(),
+                            rt:rt
                         });
 
                         await client.db(db).collection(ENUM.COL.ENG_LIST).deleteOne({ 
-                            _id: ct,
-                            hash:ct.hashCode()
+                            _id: rt,
+                            hash:rt.hashCode()
                         });
                     }
                 }
@@ -1012,8 +999,8 @@ async function deleteWdFromBase(client, db, ct, vid) {
                 for (let j = 0; j < result.wd_m[i].lk.length; ++j) {
                     if (result.wd_m[i].lk[j].vid == vid.trim()) {
                         result = await client.db(db).collection(ENUM.COL.ENG_BASE).updateOne({ 
-                            _id: ct.hashCode(),
-                            rt:ct,
+                            _id: rt.hashCode(),
+                            rt:rt,
                             'wd_m.lk.vid':vid
                         },
                         {
@@ -1041,7 +1028,7 @@ async function deleteWdFromBase(client, db, ct, vid) {
 async function insertWdIntoList(client, db, wd) {
     if (ENUM.getWord(db, wd) === undefined) {
         await insertListing(client, db, ENUM.COL.ENG_LIST, {_id:wd, hash:wd.hashCode()});
-        ENUM.addWord(db, wd, wd.hashCode());
+        ENUM.pushWord(db, wd, wd.hashCode());
 
         notifyProductToUpdateWordList();
 
@@ -1113,6 +1100,70 @@ async function deleteStrtFromBase(client, db, rt, vid) {
     }
 };
 
+async function pull(client, db, vid) {
+    // TODO
+    // Here could be performance problem
+
+    // ENG_BASE & ENG_LIST
+    // strt
+    await client.db(db).collection(ENUM.COL.ENG_BASE).updateMany({
+       'strt_m.lk.vid':vid
+    },
+    {
+        $pull:{
+            'strt_m': {
+                'lk.vid':vid
+            }
+        }
+    });
+
+    // wd
+    await client.db(db).collection(ENUM.COL.ENG_BASE).aggregate([
+        { $match: {
+            'wd_m.lk.vid':vid
+        }},
+        { $project: {
+            rt : 1,
+            _id:0
+        }}
+    ])
+    .toArray()
+    .then(await async function (res) {
+        let result = await client.db(db).collection(ENUM.COL.ENG_BASE).updateMany({
+            'wd_m.lk.vid':vid
+        },
+        {
+            $pull:{
+                'wd_m': {
+                    'lk.vid':vid
+                }
+            }
+        });
+    
+        result = await client.db(db).collection(ENUM.COL.ENG_BASE).deleteMany({
+            'wd_m':{$size:0}
+        });
+
+        for (let i in res) {
+            result = await client.db(db).collection(ENUM.COL.ENG_BASE).findOne({
+                rt:res[i].rt
+            });
+            if (result === null) {
+                result = await client.db(db).collection(ENUM.COL.ENG_LIST).deleteOne({
+                    _id:res[i].rt
+                });
+                ENUM.pullWord(db, res[i].rt);
+            }
+        }
+        
+    });
+
+    // VIDEO
+    await client.db(db).collection(ENUM.COL.VIDEO).deleteOne({
+        _id:vid
+    });
+}
+
 // To other server
 function notifyProductToUpdateWordList(db) {
     if (ENUM.DB.PRODUCT === ENUM.getDBByKey(db)) {
@@ -1125,8 +1176,8 @@ function notifyProductToUpdateWordList(db) {
 
 Object.defineProperty(String.prototype, 'hashCode', {
     value: function() {
-            var hash = 0, i, chr;
-            for (i = 0; i < this.length; i++) {
+        var hash = 0, i, chr;
+        for (i = 0; i < this.length; i++) {
             chr   = this.charCodeAt(i);
             hash  = ((hash << 5) - hash) + chr;
             hash |= 0; // Convert to 32bit integer

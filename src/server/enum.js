@@ -80,9 +80,14 @@ module.exports = function Enum() {
         }
     }
 
-    this.addWord = function (db, wd, hash) {
+    this.pushWord = function (db, wd, hash) {
         let _db = this.getDBByKey(db);
         this.WORD[_db][wd] = hash;
+    }
+
+    this.pullWord = function (db, wd) {
+        let _db = this.getDBByKey(db);
+        delete this.WORD[_db][wd];
     }
 
     this.getWord = function (db, wd) {
