@@ -504,7 +504,7 @@ async function deleteWd(req, res) {
 
 async function deleteStrt(req, res) {
     const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true });
-    const query = req.query, rt = query.rt.trim(), t = query.t.trim(), vid = query.vid.trim(), db = query.db,
+    const query = req.query, rt = query.rt.trim(), t = query.t.trim(), vid = query.vid.trim(), db = query.db.trim(),
         c = query.c.trim(), stc = query.stc.trim();
 
     // TODO
@@ -514,6 +514,8 @@ async function deleteStrt(req, res) {
     try {
         // Connect to the MongoDB cluster
         await client.connect();
+
+        console.log(db);
 
         const result = await client.db(db).collection(ENUM.COL.ENG_BASE).findOne({ 
             _id: rt.hashCode(),
@@ -570,7 +572,7 @@ async function deleteStrt(req, res) {
                                 break;
                             }
                         }
-                        res.json({res:'complete'});
+                        res.end('complete');
                         break;   
                     }
                 }
@@ -692,7 +694,7 @@ async function push(req, res) {
                                 );
 
                                 if (result.strt_m.length === 0) {
-                                    await insertStrt(client, db, strt_m, rt.hashCode());
+                                    await pushStrt(client, db, strt_m, rt.hashCode());
                                 } else {
                                     result = await client.db(db).collection(ENUM.COL.ENG_BASE).findOne({
                                         _id: rt.hashCode(),
@@ -705,7 +707,7 @@ async function push(req, res) {
                                     });
 
                                     if (result === null) {
-                                        await insertStrt(client, db, strt_m, rt.hashCode());
+                                        await pushStrt(client, db, strt_m, rt.hashCode());
                                     }
                                 }
                             }
@@ -772,38 +774,37 @@ async function insertWd(req, res) {
 
 async function insertStrt(req, res) {
     const client = new MongoClient(ENUM.URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    const query = req.query, rt = query.rt, t = query.t.trim(), usg = query.usg.trim(), 
+        vid = query.vid.trim(), db = query.db.trim(), c = parseInt(query.c), stc = parseInt(query.stc),
+        strt = query.strt.trim();
 
-    req.accepts('application/json');
-    const query = req.query, rt = query.rt, t = query.t.trim(), vid = query.link.trim(), db = query.db,
-        c = parseInt(query.c), stc = parseInt(query.stc);
+    // TODO
+    // what will happen when rt is an array more than one element.
+    console.log(rt);
     
     try {
         // Connect to the MongoDB cluster
         await client.connect();
 
         // INSERT into SB_ENG_BASE  
-        const ctListing = { 
-            _id: ct.hashCode(), 
-            rt: ct,
-            wd_m: [{  
-                lt: lt,
-                lk:[{
-                    vid:vid,
-                    date:new Date().toLocaleString(),
-                    c:c,
-                    stc:stc,
-                    wd:wd
-                }]
-            }],
-            strt_m:[]
+        const strt_m = {
+            t: t,
+            usg: usg,
+            lk:[{
+                vid:vid,
+                date:new Date().toLocaleString(),
+                c:c,
+                stc:stc,
+                strt:strt
+            }]
         };
         
-        await insertWdIntoBase(client, db, ctListing, ct.hashCode());
+        await pushStrt(client, db, strt_m, rt.hashCode());
 
-        res.json({res:'complete'});
+        res.end('complete');
     } catch (e) {
         console.error(e.stack);
-        res.json({res:e});
+        res.end(e);
     } finally {
         await client.close()
     }
@@ -1039,7 +1040,7 @@ async function insertWdIntoList(client, db, wd) {
     }
 };
 
-async function insertStrt(client, db, strt, id) {
+async function pushStrt(client, db, strt, id) {
     const result = await client.db(db).collection(ENUM.COL.ENG_BASE).updateOne(
         { _id: id },
         { $push: { 'strt_m': strt } }

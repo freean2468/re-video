@@ -60,7 +60,10 @@ export default function StcToken(props) {
 
     item = [...item, {
       t:'',
-      valInfo:[],
+      valInfo:[{
+        idxS:0,
+        idxE:0
+      }],
       cmt:'',
       from:0,
       to:0,

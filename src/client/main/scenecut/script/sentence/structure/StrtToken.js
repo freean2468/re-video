@@ -46,23 +46,24 @@ export default function strtToken(props) {
     function handleClickToggler() {
         setIsDisabled(!isDisabled);
 
+        console.log(getFromStrt('rt'));
         if (isDisabled) {
             fetch(`/api/getStrtInfo?rt=${getFromStrt('rt')}`)
             .then(res => res.json())
             .then(res => setStrtList(res.res));
 
             fetch(`/api/deleteStrt?db=${getMetadata('DBList').value.PILOT}
-                &rt=${getFromStrt('rt')}&t=${getFromStrt('t')}
+                &rt=${getFromStrt('rt')}&t=${getFromStrt('t')}&usg=${getFromStrt('usg')}
                 &vid=${encodeURIComponent(getMetadata('source')+getMetadata('file'))}
-                &c=${props.idxC}&stc=${props.idxStc}`)
-            .then(res => res.json())
+                &c=${props.idxC}&stc=${props.idxStc}&strt=${props.idxStrt}`)
+            .then(res => res.text())
             .then(res => console.log('[deleteStrtFromBase_RES] : ', res));
         } else {
             fetch(`/api/insertStrt?db=${getMetadata('DBList').value.PILOT}
-                &rt=${getFromStrt('rt')}&t=${getFromStrt('t')}
+                &rt=${getFromStrt('rt')}&t=${getFromStrt('t')}}&usg=${getFromStrt('usg')}
                 &vid=${encodeURIComponent(getMetadata('source')+getMetadata('file'))}
-                &c=${props.idxC}&stc=${props.idxStc}`)
-            .then(res => res.json())
+                &c=${props.idxC}&stc=${props.idxStc}&strt=${props.idxStrt}`)
+            .then(res => res.text())
             .then(res => console.log('[deleteStrtFromBase_RES] : ', res));
             
             setStrtList([]);
@@ -101,7 +102,8 @@ export default function strtToken(props) {
     return (
         <div className="StrtToken">
             <button onClick={handleClickDelStrt} >Del Strt</button><br></br>
-            strt : <input className="Strt" value={getFromStrt('t')} disabled={(isDisabled)? "disabled" : ""} />
+            strt : <input className="Strt" value={getFromStrt('t')} onChange={(e) => handleChangeStrt(e.target.value)}
+                        disabled={(isDisabled)? "disabled" : ""} />
             &nbsp; 
             {strtList !== [] &&
                 <>
