@@ -3,7 +3,6 @@ import './nav.css'
 import SearchGroup from './SearchGroup';
 
 export default function Nav(props) {
-  const nav = useNav();
   const selected = useSelected();
 
   function handleClick(e, fileName, db, folder) {
@@ -30,14 +29,14 @@ export default function Nav(props) {
       <SearchGroup/>
       <div className="NavList">
         <ul>
-          {Object.keys(nav.value).map((db) => 
+          {Object.keys(props.nav.value).map((db) => 
             <div className="DB" key={db} >
               {selected.displayDB(db)}
-              {Object.keys(nav.value[db]).map((folder) => 
+              {Object.keys(props.nav.value[db]).map((folder) => 
                 <div className="Folder" key={folder} onClick={()=>selected.handleClick(db, folder)}>
                   {selected.displayFolder(db, folder)}
                   {(selected.folder === folder && selected.db === db) &&
-                    nav.value[db][folder].map((fileName) =>
+                    props.nav.value[db][folder].map((fileName) =>
                       <li key={fileName} className="NavItem" onClick={(e)=>handleClick(e, fileName, db, folder)}>
                         <a className="Item" href="#">
                           {fileName}
@@ -53,20 +52,6 @@ export default function Nav(props) {
       </div>
     </div>
   );
-}
-
-function useNav() {
-  const [value, setValue] = useState([]);
-
-  useEffect(()=>{
-    fetch('/api/getNav')
-    .then(res => res.json())
-    .then(list => setValue(list));
-  },[]);
-
-  return {
-    value
-  };
 }
 
 function useSelected() {

@@ -84,6 +84,8 @@ function useData() {
   const DBList = useDBList();
   const audioBuffer = useAudioBuffer(data.source, data.file);
   const cvTypeList = useCvTypeList(data.source);
+  
+  const nav = useNav();
 
   function init(_value, _path) {
     // exception handling codes
@@ -121,7 +123,10 @@ function useData() {
       headers: {"Content-Type": "application/json"}
     })
     .then(res => res.json())
-    .then(res => console.log('[PUSH RES] ',res.res));
+    .then(res => {
+      console.log('[PUSH RES] ',res.res);
+      nav.updateNav();
+    });
   };
 
   function pushToProduct() {
@@ -131,7 +136,10 @@ function useData() {
       headers: {"Content-Type": "application/json"}
     })
     .then(res => res.json())
-    .then(res => console.log('[PUSH RES] ',res.res));
+    .then(res => {
+      console.log('[PUSH RES] ',res.res)
+      nav.updateNav();
+    });
   };
 
   function handleChange(_key, _value) {
@@ -156,6 +164,7 @@ function useData() {
     DBList,
     audioBuffer,
     cvTypeList,
+    nav,
 
     setData,
     init,
@@ -286,6 +295,28 @@ function useCvTypeList(source) {
     value,
     init,
     update
+  };
+}
+
+function useNav() {
+  const [value, setValue] = useState([]);
+
+  useEffect(()=>{
+    fetch('/api/getNav')
+    .then(res => res.json())
+    .then(list => setValue(list));
+  },[]);
+
+  async function updateNav() {
+    return await fetch('/api/getNav')
+    .then(res => res.json())
+    .then(list => setValue(list));
+  }
+
+  return {
+    value,
+
+    updateNav
   };
 }
 

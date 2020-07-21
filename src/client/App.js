@@ -8,7 +8,7 @@ export default function App() {
 
   return (
     <div className="Wrapper">
-      <Nav init={data.init}/>
+      <Nav init={data.init} nav={data.nav}/>
       <Main data={data}/>
     </div>
   );
