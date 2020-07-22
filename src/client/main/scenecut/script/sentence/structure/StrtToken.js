@@ -46,22 +46,29 @@ export default function strtToken(props) {
     function handleClickToggler() {
         setIsDisabled(!isDisabled);
 
-        console.log(getFromStrt('rt'));
         if (isDisabled) {
             fetch(`/api/getStrtInfo?rt=${getFromStrt('rt')}`)
             .then(res => res.json())
-            .then(res => setStrtList(res.res));
+            .then(res => {
+                if (res.res !== 0) {
+                    setStrtList(res.res);  
+                } else {
+                  console.log('[getStrtInfo] error')
+                }
+              });
 
             fetch(`/api/deleteStrt?db=${getMetadata('DBList').value.PILOT}
-                &rt=${getFromStrt('rt')}&t=${getFromStrt('t')}&usg=${getFromStrt('usg')}
-                &vid=${encodeURIComponent(getMetadata('source')+getMetadata('file'))}
+                &rt=${getFromStrt('rt')}&t=${encodeURIComponent(getFromStrt('t'))}
+                &usg=${encodeURIComponent(getFromStrt('usg'))}
+                &vid=${encodeURIComponent(getData('source')+getData('file'))}
                 &c=${props.idxC}&stc=${props.idxStc}&strt=${props.idxStrt}`)
             .then(res => res.text())
             .then(res => console.log('[deleteStrtFromBase_RES] : ', res));
         } else {
             fetch(`/api/insertStrt?db=${getMetadata('DBList').value.PILOT}
-                &rt=${getFromStrt('rt')}&t=${getFromStrt('t')}}&usg=${getFromStrt('usg')}
-                &vid=${encodeURIComponent(getMetadata('source')+getMetadata('file'))}
+                &rt=${getFromStrt('rt')}&t=${encodeURIComponent(getFromStrt('t'))}
+                &usg=${encodeURIComponent(getFromStrt('usg'))}
+                &vid=${encodeURIComponent(getData('source')+getData('file'))}
                 &c=${props.idxC}&stc=${props.idxStc}&strt=${props.idxStrt}`)
             .then(res => res.text())
             .then(res => console.log('[deleteStrtFromBase_RES] : ', res));
